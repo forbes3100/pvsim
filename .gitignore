@@ -1,4 +1,6 @@
 .git
+.DS_Store
+.del-depend
 build
 ChangeLog
 Old
