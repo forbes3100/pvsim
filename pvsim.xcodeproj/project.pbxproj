@@ -1,0 +1,523 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D269DDBE1636614300D01308 /* EvalSignal.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDAF1636614200D01308 /* EvalSignal.cc */; };
+		D269DDC01636614300D01308 /* ModelPCode.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB11636614200D01308 /* ModelPCode.cc */; };
+		D269DDC11636614300D01308 /* PVSimMain.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB21636614200D01308 /* PVSimMain.cc */; };
+		D269DDC21636614300D01308 /* SimPalSrc.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB31636614200D01308 /* SimPalSrc.cc */; };
+		D269DDC31636614300D01308 /* Simulator.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB41636614200D01308 /* Simulator.cc */; };
+		D269DDC41636614300D01308 /* Src.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB51636614200D01308 /* Src.cc */; };
+		D269DDC51636614300D01308 /* Utils.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB61636614200D01308 /* Utils.cc */; };
+		D269DDC61636614300D01308 /* Version.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB71636614200D01308 /* Version.cc */; };
+		D269DDC71636614300D01308 /* VLCoderPCode.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB81636614200D01308 /* VLCoderPCode.cc */; };
+		D269DDC81636614300D01308 /* VLCompiler.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB91636614200D01308 /* VLCompiler.cc */; };
+		D269DDC91636614300D01308 /* VLExpr.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDBA1636614200D01308 /* VLExpr.cc */; };
+		D269DDCA1636614300D01308 /* VLInstance.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDBB1636614200D01308 /* VLInstance.cc */; };
+		D269DDCB1636614300D01308 /* VLModule.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDBC1636614200D01308 /* VLModule.cc */; };
+		D269DDCC1636614300D01308 /* VLSysLib.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDBD1636614200D01308 /* VLSysLib.cc */; };
+		D269DDDC1636641000D01308 /* EvalSignal.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDAF1636614200D01308 /* EvalSignal.cc */; };
+		D269DDDD1636641700D01308 /* ModelPCode.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB11636614200D01308 /* ModelPCode.cc */; };
+		D269DDDF1636642200D01308 /* SimPalSrc.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB31636614200D01308 /* SimPalSrc.cc */; };
+		D269DDE01636642500D01308 /* Simulator.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB41636614200D01308 /* Simulator.cc */; };
+		D269DDE11636642700D01308 /* Src.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB51636614200D01308 /* Src.cc */; };
+		D269DDE21636642B00D01308 /* Utils.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB61636614200D01308 /* Utils.cc */; };
+		D269DDE31636642E00D01308 /* Version.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB71636614200D01308 /* Version.cc */; };
+		D269DDE41636643400D01308 /* VLCoderPCode.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB81636614200D01308 /* VLCoderPCode.cc */; };
+		D269DDE51636643700D01308 /* VLCompiler.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDB91636614200D01308 /* VLCompiler.cc */; };
+		D269DDE61636643A00D01308 /* VLExpr.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDBA1636614200D01308 /* VLExpr.cc */; };
+		D269DDE71636643C00D01308 /* VLInstance.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDBB1636614200D01308 /* VLInstance.cc */; };
+		D269DDE81636643F00D01308 /* VLModule.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDBC1636614200D01308 /* VLModule.cc */; };
+		D269DDE91636644200D01308 /* VLSysLib.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDBD1636614200D01308 /* VLSysLib.cc */; };
+		D269DDEC1636645900D01308 /* PVSimExtension.cc in Sources */ = {isa = PBXBuildFile; fileRef = D269DDEA1636644F00D01308 /* PVSimExtension.cc */; };
+		D269DDFB1636CB9A00D01308 /* Model.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDF11636CB9900D01308 /* Model.h */; };
+		D269DDFC1636CB9A00D01308 /* PCode.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDF21636CB9900D01308 /* PCode.h */; };
+		D269DDFE1636CB9A00D01308 /* SimPalSrc.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDF41636CB9900D01308 /* SimPalSrc.h */; };
+		D269DDFF1636CB9A00D01308 /* Src.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDF51636CB9900D01308 /* Src.h */; };
+		D269DE001636CB9A00D01308 /* Utils.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDF61636CB9A00D01308 /* Utils.h */; };
+		D269DE011636CB9A00D01308 /* VL.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDF71636CB9A00D01308 /* VL.h */; };
+		D269DE021636CB9A00D01308 /* VLCoder.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDF81636CB9A00D01308 /* VLCoder.h */; };
+		D269DE031636CB9A00D01308 /* VLCompiler.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDF91636CB9A00D01308 /* VLCompiler.h */; };
+		D269DE041636CB9A00D01308 /* VLSysLib.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDFA1636CB9A00D01308 /* VLSysLib.h */; };
+		D269DE0B1636CC7300D01308 /* PSignal.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DE0A1636CC7300D01308 /* PSignal.h */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D269DD9B163660EA00D01308 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		D269DD9D163660EA00D01308 /* pvsimu */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = pvsimu; sourceTree = BUILT_PRODUCTS_DIR; };
+		D269DDAF1636614200D01308 /* EvalSignal.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = EvalSignal.cc; sourceTree = "<group>"; };
+		D269DDB11636614200D01308 /* ModelPCode.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelPCode.cc; sourceTree = "<group>"; };
+		D269DDB21636614200D01308 /* PVSimMain.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PVSimMain.cc; sourceTree = "<group>"; };
+		D269DDB31636614200D01308 /* SimPalSrc.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SimPalSrc.cc; sourceTree = "<group>"; };
+		D269DDB41636614200D01308 /* Simulator.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Simulator.cc; sourceTree = "<group>"; };
+		D269DDB51636614200D01308 /* Src.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Src.cc; sourceTree = "<group>"; };
+		D269DDB61636614200D01308 /* Utils.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Utils.cc; sourceTree = "<group>"; };
+		D269DDB71636614200D01308 /* Version.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Version.cc; sourceTree = "<group>"; };
+		D269DDB81636614200D01308 /* VLCoderPCode.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VLCoderPCode.cc; sourceTree = "<group>"; };
+		D269DDB91636614200D01308 /* VLCompiler.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VLCompiler.cc; sourceTree = "<group>"; };
+		D269DDBA1636614200D01308 /* VLExpr.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VLExpr.cc; sourceTree = "<group>"; };
+		D269DDBB1636614200D01308 /* VLInstance.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VLInstance.cc; sourceTree = "<group>"; };
+		D269DDBC1636614200D01308 /* VLModule.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VLModule.cc; sourceTree = "<group>"; };
+		D269DDBD1636614200D01308 /* VLSysLib.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VLSysLib.cc; sourceTree = "<group>"; };
+		D269DDD11636625500D01308 /* libpvsim_ext.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpvsim_ext.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D269DDEA1636644F00D01308 /* PVSimExtension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PVSimExtension.cc; sourceTree = "<group>"; };
+		D269DDF11636CB9900D01308 /* Model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Model.h; sourceTree = "<group>"; };
+		D269DDF21636CB9900D01308 /* PCode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PCode.h; sourceTree = "<group>"; };
+		D269DDF41636CB9900D01308 /* SimPalSrc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SimPalSrc.h; sourceTree = "<group>"; };
+		D269DDF51636CB9900D01308 /* Src.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Src.h; sourceTree = "<group>"; };
+		D269DDF61636CB9A00D01308 /* Utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Utils.h; sourceTree = "<group>"; };
+		D269DDF71636CB9A00D01308 /* VL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VL.h; sourceTree = "<group>"; };
+		D269DDF81636CB9A00D01308 /* VLCoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VLCoder.h; sourceTree = "<group>"; };
+		D269DDF91636CB9A00D01308 /* VLCompiler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VLCompiler.h; sourceTree = "<group>"; };
+		D269DDFA1636CB9A00D01308 /* VLSysLib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VLSysLib.h; sourceTree = "<group>"; };
+		D269DE0A1636CC7300D01308 /* PSignal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSignal.h; sourceTree = "<group>"; };
+		D27C2D7F2BE0292F0034BE0F /* TODO */ = {isa = PBXFileReference; lastKnownFileType = text; path = TODO; sourceTree = "<group>"; };
+		D27C2D802BE0292F0034BE0F /* pvsim.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = pvsim.py; sourceTree = "<group>"; };
+		D27C2D812BE0292F0034BE0F /* README.rst.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.rst.txt; sourceTree = "<group>"; };
+		D27C2D822BE029620034BE0F /* mp5.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = mp5.py; sourceTree = "<group>"; };
+		D27C2D832BE029620034BE0F /* showprof.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = showprof.py; sourceTree = "<group>"; };
+		D27C2D842BE029620034BE0F /* rsrc */ = {isa = PBXFileReference; lastKnownFileType = folder; path = rsrc; sourceTree = "<group>"; };
+		D27C2D852BE029620034BE0F /* setup_ext.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = setup_ext.py; sourceTree = "<group>"; };
+		D27C2D862BE029630034BE0F /* setup.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = setup.py; sourceTree = "<group>"; };
+		D27C2D872BE029630034BE0F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		D27C2D882BE029630034BE0F /* winbuild.bat */ = {isa = PBXFileReference; lastKnownFileType = text; path = winbuild.bat; sourceTree = "<group>"; };
+		D27C2D892BE029630034BE0F /* doc */ = {isa = PBXFileReference; lastKnownFileType = folder; path = doc; sourceTree = "<group>"; };
+		D27C2D8A2BE029630034BE0F /* INSTALL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = INSTALL.txt; sourceTree = "<group>"; };
+		D27C2D8B2BE029630034BE0F /* PKG-INFO */ = {isa = PBXFileReference; lastKnownFileType = text; path = "PKG-INFO"; sourceTree = "<group>"; };
+		D27C2D8C2BE029630034BE0F /* pvsim.spec */ = {isa = PBXFileReference; lastKnownFileType = text; path = pvsim.spec; sourceTree = "<group>"; };
+		D27C2D8D2BE029630034BE0F /* winpack.bat */ = {isa = PBXFileReference; lastKnownFileType = text; path = winpack.bat; sourceTree = "<group>"; };
+		D27C2D902BE029630034BE0F /* pvsim_exe.iss */ = {isa = PBXFileReference; lastKnownFileType = text; path = pvsim_exe.iss; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D269DD9A163660EA00D01308 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D269DDCE1636625500D01308 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D250B7E02BE069C300E5915B /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D269DDAF1636614200D01308 /* EvalSignal.cc */,
+				D269DDB11636614200D01308 /* ModelPCode.cc */,
+				D269DDF11636CB9900D01308 /* Model.h */,
+				D269DDF21636CB9900D01308 /* PCode.h */,
+				D269DE0A1636CC7300D01308 /* PSignal.h */,
+				D269DDEA1636644F00D01308 /* PVSimExtension.cc */,
+				D269DDB21636614200D01308 /* PVSimMain.cc */,
+				D269DDB31636614200D01308 /* SimPalSrc.cc */,
+				D269DDF41636CB9900D01308 /* SimPalSrc.h */,
+				D269DDB41636614200D01308 /* Simulator.cc */,
+				D269DDB51636614200D01308 /* Src.cc */,
+				D269DDF51636CB9900D01308 /* Src.h */,
+				D269DDB61636614200D01308 /* Utils.cc */,
+				D269DDF61636CB9A00D01308 /* Utils.h */,
+				D269DDB71636614200D01308 /* Version.cc */,
+				D269DDF71636CB9A00D01308 /* VL.h */,
+				D269DDB81636614200D01308 /* VLCoderPCode.cc */,
+				D269DDF81636CB9A00D01308 /* VLCoder.h */,
+				D269DDB91636614200D01308 /* VLCompiler.cc */,
+				D269DDF91636CB9A00D01308 /* VLCompiler.h */,
+				D269DDBA1636614200D01308 /* VLExpr.cc */,
+				D269DDBB1636614200D01308 /* VLInstance.cc */,
+				D269DDBC1636614200D01308 /* VLModule.cc */,
+				D269DDBD1636614200D01308 /* VLSysLib.cc */,
+				D269DDFA1636CB9A00D01308 /* VLSysLib.h */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		D269DD92163660EA00D01308 = {
+			isa = PBXGroup;
+			children = (
+				D27C2D802BE0292F0034BE0F /* pvsim.py */,
+				D250B7E02BE069C300E5915B /* src */,
+				D27C2D842BE029620034BE0F /* rsrc */,
+				D27C2D892BE029630034BE0F /* doc */,
+				D27C2D822BE029620034BE0F /* mp5.py */,
+				D27C2D832BE029620034BE0F /* showprof.py */,
+				D27C2D902BE029630034BE0F /* pvsim_exe.iss */,
+				D27C2D8C2BE029630034BE0F /* pvsim.spec */,
+				D27C2D852BE029620034BE0F /* setup_ext.py */,
+				D27C2D862BE029630034BE0F /* setup.py */,
+				D27C2D882BE029630034BE0F /* winbuild.bat */,
+				D27C2D8D2BE029630034BE0F /* winpack.bat */,
+				D27C2D8B2BE029630034BE0F /* PKG-INFO */,
+				D27C2D872BE029630034BE0F /* README.md */,
+				D27C2D812BE0292F0034BE0F /* README.rst.txt */,
+				D27C2D8A2BE029630034BE0F /* INSTALL.txt */,
+				D27C2D7F2BE0292F0034BE0F /* TODO */,
+				D269DD9E163660EA00D01308 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D269DD9E163660EA00D01308 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D269DD9D163660EA00D01308 /* pvsimu */,
+				D269DDD11636625500D01308 /* libpvsim_ext.dylib */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		D269DDCF1636625500D01308 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D269DDFB1636CB9A00D01308 /* Model.h in Headers */,
+				D269DDFC1636CB9A00D01308 /* PCode.h in Headers */,
+				D269DDFE1636CB9A00D01308 /* SimPalSrc.h in Headers */,
+				D269DDFF1636CB9A00D01308 /* Src.h in Headers */,
+				D269DE001636CB9A00D01308 /* Utils.h in Headers */,
+				D269DE011636CB9A00D01308 /* VL.h in Headers */,
+				D269DE021636CB9A00D01308 /* VLCoder.h in Headers */,
+				D269DE031636CB9A00D01308 /* VLCompiler.h in Headers */,
+				D269DE041636CB9A00D01308 /* VLSysLib.h in Headers */,
+				D269DE0B1636CC7300D01308 /* PSignal.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		D269DD9C163660EA00D01308 /* pvsimu */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D269DDA7163660EA00D01308 /* Build configuration list for PBXNativeTarget "pvsimu" */;
+			buildPhases = (
+				D269DD99163660EA00D01308 /* Sources */,
+				D269DD9A163660EA00D01308 /* Frameworks */,
+				D269DD9B163660EA00D01308 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = pvsimu;
+			productName = pvsim;
+			productReference = D269DD9D163660EA00D01308 /* pvsimu */;
+			productType = "com.apple.product-type.tool";
+		};
+		D269DDD01636625500D01308 /* pvsim_ext */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D269DDD21636625500D01308 /* Build configuration list for PBXNativeTarget "pvsim_ext" */;
+			buildPhases = (
+				D269DDCD1636625500D01308 /* Sources */,
+				D269DDCE1636625500D01308 /* Frameworks */,
+				D269DDCF1636625500D01308 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = pvsim_ext;
+			productName = pvsim_ext;
+			productReference = D269DDD11636625500D01308 /* libpvsim_ext.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D269DD94163660EA00D01308 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1510;
+			};
+			buildConfigurationList = D269DD97163660EA00D01308 /* Build configuration list for PBXProject "pvsim" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D269DD92163660EA00D01308;
+			productRefGroup = D269DD9E163660EA00D01308 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D269DD9C163660EA00D01308 /* pvsimu */,
+				D269DDD01636625500D01308 /* pvsim_ext */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D269DD99163660EA00D01308 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D269DDBE1636614300D01308 /* EvalSignal.cc in Sources */,
+				D269DDC01636614300D01308 /* ModelPCode.cc in Sources */,
+				D269DDC11636614300D01308 /* PVSimMain.cc in Sources */,
+				D269DDC21636614300D01308 /* SimPalSrc.cc in Sources */,
+				D269DDC31636614300D01308 /* Simulator.cc in Sources */,
+				D269DDC41636614300D01308 /* Src.cc in Sources */,
+				D269DDC51636614300D01308 /* Utils.cc in Sources */,
+				D269DDC61636614300D01308 /* Version.cc in Sources */,
+				D269DDC71636614300D01308 /* VLCoderPCode.cc in Sources */,
+				D269DDC81636614300D01308 /* VLCompiler.cc in Sources */,
+				D269DDC91636614300D01308 /* VLExpr.cc in Sources */,
+				D269DDCA1636614300D01308 /* VLInstance.cc in Sources */,
+				D269DDCB1636614300D01308 /* VLModule.cc in Sources */,
+				D269DDCC1636614300D01308 /* VLSysLib.cc in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D269DDCD1636625500D01308 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D269DDDC1636641000D01308 /* EvalSignal.cc in Sources */,
+				D269DDDD1636641700D01308 /* ModelPCode.cc in Sources */,
+				D269DDDF1636642200D01308 /* SimPalSrc.cc in Sources */,
+				D269DDE01636642500D01308 /* Simulator.cc in Sources */,
+				D269DDE11636642700D01308 /* Src.cc in Sources */,
+				D269DDE21636642B00D01308 /* Utils.cc in Sources */,
+				D269DDE31636642E00D01308 /* Version.cc in Sources */,
+				D269DDE41636643400D01308 /* VLCoderPCode.cc in Sources */,
+				D269DDE51636643700D01308 /* VLCompiler.cc in Sources */,
+				D269DDE61636643A00D01308 /* VLExpr.cc in Sources */,
+				D269DDE71636643C00D01308 /* VLInstance.cc in Sources */,
+				D269DDE81636643F00D01308 /* VLModule.cc in Sources */,
+				D269DDE91636644200D01308 /* VLSysLib.cc in Sources */,
+				D269DDEC1636645900D01308 /* PVSimExtension.cc in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D269DDA5163660EA00D01308 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		D269DDA6163660EA00D01308 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D269DDA8163660EA00D01308 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				DEAD_CODE_STRIPPING = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_SHORT_ENUMS = YES;
+				HEADER_SEARCH_PATHS = (
+					src,
+					"/opt/homebrew/Cellar/python@3.12/3.12.3/Frameworks/Python.framework/Versions/3.12/include/python3.12",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		D269DDA9163660EA00D01308 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				DEAD_CODE_STRIPPING = YES;
+				GCC_SHORT_ENUMS = YES;
+				HEADER_SEARCH_PATHS = (
+					src,
+					"/opt/homebrew/Cellar/python@3.12/3.12.3/Frameworks/Python.framework/Versions/3.12/include/python3.12",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		D269DDD31636625500D01308 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				DEAD_CODE_STRIPPING = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_PREPROCESSOR_DEFINITIONS = EXTENSION;
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = "DEBUG=1";
+				GCC_PREPROCESSOR_DEFINITIONS_NOT_USED_IN_PRECOMPS = (
+					"DEBUG=1",
+					EXTENSION,
+					"$(inherited)",
+				);
+				GCC_SHORT_ENUMS = YES;
+				HEADER_SEARCH_PATHS = "/opt/homebrew/Cellar/python@3.12/3.12.3/Frameworks/Python.framework/Versions/3.12/include/python3.12";
+				LIBRARY_SEARCH_PATHS = "/opt/homebrew/Cellar/python@3.12/3.12.3/Frameworks/Python.framework/Versions/3.12/lib";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				OTHER_LDFLAGS = "-lpython3.12";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		D269DDD41636625500D01308 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				DEAD_CODE_STRIPPING = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_PREPROCESSOR_DEFINITIONS = EXTENSION;
+				GCC_PREPROCESSOR_DEFINITIONS_NOT_USED_IN_PRECOMPS = (
+					"DEBUG=1",
+					EXTENSION,
+					"$(inherited)",
+				);
+				GCC_SHORT_ENUMS = YES;
+				HEADER_SEARCH_PATHS = "/opt/homebrew/Cellar/python@3.12/3.12.3/Frameworks/Python.framework/Versions/3.12/include/python3.12";
+				LIBRARY_SEARCH_PATHS = "/opt/homebrew/Cellar/python@3.12/3.12.3/Frameworks/Python.framework/Versions/3.12/lib";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				OTHER_LDFLAGS = "-lpython3.12";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D269DD97163660EA00D01308 /* Build configuration list for PBXProject "pvsim" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D269DDA5163660EA00D01308 /* Debug */,
+				D269DDA6163660EA00D01308 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D269DDA7163660EA00D01308 /* Build configuration list for PBXNativeTarget "pvsimu" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D269DDA8163660EA00D01308 /* Debug */,
+				D269DDA9163660EA00D01308 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D269DDD21636625500D01308 /* Build configuration list for PBXNativeTarget "pvsim_ext" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D269DDD31636625500D01308 /* Debug */,
+				D269DDD41636625500D01308 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D269DD94163660EA00D01308 /* Project object */;
+}
