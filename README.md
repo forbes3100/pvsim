@@ -1,2 +1,2 @@
 # pvsim
-Portable Verilog Simulator for macOS, Linux, and Windows
+Portable Verilog Simulator
