@@ -1,0 +1,39 @@
+   DESIGN NOTES
+
+Basically, we compile a bunch of routines that each get executed when
+one of their trigger signals changes. The routines have access to
+signal levels and local and global variables, and may generate events,
+modify variables, and call library routines.
+
+Assignment statements and primitive gates have pre-emptive events: if
+a new input event occurs causing the statement to be reevaluated before
+a pending output event has occurred, the pending event is removed first.
+
+Each 'always' and 'initial' block of code is a separate task,
+and when it encounters a blocking statement ('#', etc.) it suspends execution.
+
+Every module, task, function, and named begin-end has a corresponding
+dummy signal to pass enable, disable events.
+
+Every named event is also a dummy signal.
+
+In standard Verilog, any item can be referred to anywhere by using
+heirarchical names (e.g. "m.blat.foo"). But since the compiler
+needs to know the type of an item before coding it, it must be a
+2-pass compiler. A 2-pass compiler either means that every
+keyword is scanned and looked-up twice, unless the input is
+tokenized on the first pass.
+
+An alternative is to restrict my Verilog to disallow forward references.
+This is mostly a matter of rearranging files: requiring any modules
+in which internal variables are accessed to be declared first.
+It may also necessitate a "forward" module item.
+This method does have the advantage of detecting invalid references
+at the point they are made, instead of at link time.
+
+For these external references, we compile a load of the scope's
+reference variable whose value will be determined at instantation time.
+
+A task is really just a behavioral-code subroutine. It can have local
+variables, but these are only local in scope; their storage is in the
+enclosing module and is shared by all threads of execution in that module.

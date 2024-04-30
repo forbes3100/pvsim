@@ -1,0 +1,232 @@
+
+							PVSim Simulator Manual
+
+
+------------------------------ Starting PVSim ------------------------------
+
+To start up the simulator, double-click on your project (.psim) file and wait
+for PVSim to also start up the Alpha editor.
+
+When ready, it will be in Alpha, and will present you with a status line
+window at the top, and a log window just below that. Most of the
+menus are Alpha's menus, used for general file editing. The "Simulate"
+and menu pertains to the simulator.
+
+To recompile and run the same the simulation, type command-R. To choose another
+project, return to the Finder and double-click on that project (.psim) file.
+
+While the simulator is running it will display progress messages in its
+message window. It can be paused/resumed at any time by typing a Command-','
+and stopped with a standard Command-'.'.
+
+If an error is encountered while loading the simulation, it will return
+to Alpha and show the error in the log window, and may also open
+the file containing the offending line, centered on that line.
+
+When the simulation runs sucessfully, it will draw a timing window on the
+right side of the screen.  For details, see the "Timing Window Control"
+section below.
+
+
+----------------------------------- Menus -----------------------------------
+
+This section lists the menus added to the Alpha editor by the simulator, and
+those in the PS simulator itself (infrequently used).
+
+¥ ALPHA -
+
+Simulate
+	Simulator Help...		  Shows this window.
+	Return To Simulator		  Returns to the PVSim application.
+	Return And Simulate		  Simulates the current project.
+	Find Signal Timing		  Goes to the timing line of selected signal.
+	Find Signal Source		  Goes to the source equation of selected signal.
+
+¥ PVSim -
+
+File
+	Close Window		Closes the selected Timing window.
+	Switch to Alpha		Switches back to main Alpha editor.
+	Quit				Quits the simulator.
+
+
+---------------------------------- Files ------------------------------------
+
+The following list includes most types of files used by the simulator. The files
+used by a given project are all kept in the same folder.
+
+.psim			Project file. This file declares which Verilog files are to be
+				loaded, how long the simulation should run, and what signals
+				to trace, if any.
+
+.v				Verilog source file. Test bench files are usually suffixed
+				"_tb.v".
+
+.log			Log of last compile and simulation run.
+
+.events			Log of traced signal events, if any.
+
+.order			Timing window signal ordering.
+
+
+-------------------------------- Alpha Tips ---------------------------------
+
+¥ PARAGRAPH FORMAT - If Alpha asks if you want to convert a file to paragraph
+format, say no for design files.  Otherwise, it will mess up part of the file.
+
+
+-------------------------- Timing Window Control ----------------------------
+
+The results of the simulation are shown in a timing window, which can be 
+resized and scrolled.
+
+¥ TIME SCALE - The two magnifying-glass buttons to the left of the 
+horizontal scroll bar at the bottom change the time scale: (+) zooms in,
+and (-) zooms out.  The time scale is remembered between runs.
+
+¥ TIME MEASUREMENT - The relative time of the location under the cursor is 
+displayed in the lower-left corner of the window while the cursor is in 
+the main timing diagram pane.  When the cursor is outside the pane, the 
+time corresponding to the left side of the visible diagram is shown.  The 
+time difference will be displayed as long as the mouse button is held 
+down.  To measure a time from one event to another, drag the cursor 
+between these events.  This area will stay highlighted until the next time 
+the cursor is dragged in this pane. Zoom in to get more accurate measurements.
+
+¥ SIGNAL SELECTION - A signal or group of contiguous signals can also be 
+highlighted by dragging down across the signal names on the left side of 
+the window.  This highlighting is independent of the time highlighting.
+
+¥ SIGNAL ARRANGEMENT - Signal groups can be cut and pasted in the normal 
+Mac manner by selecting the signals in the signal names area on the left 
+side.  There is no signal 'I' beam cursor, but signals will be pasted 
+between the signal names last clicked on.  Any signals that were cut out 
+will reappear at the bottom after the next simulation.
+
+Note that any indentation and blue-coloring is removed when a signal is
+pasted (see GATHER SIGNAL'S INPUTS below).
+
+¥ ORDER FILE - The signals will retain their revised order even after 
+quitting the simulator.  They are saved as a text list in the ".order" 
+file.  This file also remembers the last scoll position, time scale, etc.
+
+¥ LOCATE SIGNAL SOURCE - To locate the source equation for a signal shown 
+in the timing window, double click on its name.  This will open the source 
+file in Alpha and center it on the signal's equation.  If there are multiple
+PAL source equations for this same signal, a "Select Source" window will
+appear with the multiple sources listed in green underline.  Clicking on
+a source in this list will bring you to that source location.
+
+¥ LOCATE SIGNAL TIMING - To locate a signal in the timing window, either 
+use find (command-F) when the timing window is in front, or in Alpha, 
+select the whole signal name and type command-B. All or part of a signal
+name can be searched for with command-F, and command-G continue the search.
+To start back at the top of the window, use command-up-arrow.
+
+¥ GATHER SIGNAL'S INPUTS - To gather the timing lines for all of a signal's
+input signals (and also locate it's source equation) hold down the command
+key and double click on its name in the timing window. The input signals will
+be inserted into the timing window in front of the target signal and
+will be selected, colored blue, and indented relative to the output signal.
+
+To remove them again, just do a cut (command-X). The indentation will be
+remembered between runs and saves, and can be removed by cutting and then
+repasting the signals.
+
+To gather from inside a text file, select the signal name and type command-T.
+A command-option double-click will gather the signals without going to the
+source file.
+
+
+--------------------------- Error Flag Signal -------------------------------
+
+The signal "ErrFlag" must be defined as a stable signal in a simulation, and
+it will be brought high when a model detects an error condition.  The error
+message will be printed on the ErrFlag signal at the point the error occurs
+and the simulation will stop 1/4 timing-window-widths later.
+
+
+----------------------------- Error Messages --------------------------------
+
+If an error is encountered while loading the simulation, it will return
+to Alpha and show the error in the .log window, and may also open
+the file containing the offending line, centered on that line.
+
+
+------------------------------- Signal States -------------------------------
+
+	This simulator allows a signal to be in one of the following states
+at any given time:
+
+		______
+	H			high
+
+	L	______	low
+		______
+	S	______	stable high or low
+		     _
+	R	_////	rising (light-gray fill)
+		_
+	F	 \\\\_	falling (light-gray fill)
+		_  
+	X	 XXXX_	changing (dark-gray fill)
+
+	Q	------	tri-state
+
+	U	_,,,,-	going low to tri-state or tri-state to low
+		_
+	D	 ````-	going high to tri-state or tri-state to high
+
+	C	_####-	bus conflict (black fill)
+		______
+	W			weak high (a little below High)
+
+	V	______	weak low (a little above Low)
+
+
+--------------------------- Project File Format ---------------------------
+
+Here is a typical Project (.psim) file, which is the top-level simulation
+file that specifies which files are to be loaded and the simulation duration.
+
+// PowerPC 4-way Sub-arbiter project
+
+// desired duration in ns
+duration 1000
+
+// Verilog source
+load arb4.v	
+load arb4_tb.v
+
+// log signal events in arb4.events
+trace BClk
+
+
+--------------------------- Simulation Debugging ----------------------------
+
+The simulator creates a text file named "events" each time a simulation
+is run that contains a list of events for selected signals. This is useful
+for debugging the simulator itself.
+
+trace <signal>			Write each event of signal out to the .events file.
+
+breakOnSignal <signal>		Stop at a breakpoint in the routine "updateDependents"
+							each time that <signal> changes. This requires
+							that you select "Use Debugger" in C.
+
+
+--------------------------- Warranty and Copying ----------------------------
+
+PVSim is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with PVSim; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA

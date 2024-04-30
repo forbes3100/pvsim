@@ -1,0 +1,45 @@
+Name	    Code Precedence
+==========  ==== ==========
+op_lit	    0	0
+op_stacked  1	0
+op_load	    2	0	
+op_lea	    3	0
+op_conv	    4	0
+op_func	    5	0
+op_not	    6	55
+op_pos	    7	55
+op_neg	    8	55
+op_com	    9	55
+op_uand	    10	55
+op_unand    11	55
+op_uor	    12	55
+op_unor	    13	55
+op_uxor	    14	55
+op_uxnor    15	55
+op_mul	    16	50
+op_div	    17	50
+op_mod	    18	50
+op_add	    19	45
+op_sub	    20	45
+op_sla
+op_sra
+op_lt
+op_le
+op_gt
+op_ge
+op_eq
+op_ne
+op_ceq
+op_cne
+op_band
+op_bnand
+op_bxor
+op_bxnor
+op_bor
+op_bnor
+op_and
+op_or
+op_sel	    39	5
+op_else	    40	5
+op_paren    41	2
+op_none	    42	0

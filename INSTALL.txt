@@ -1,0 +1,85 @@
+Installation Instructions
+=========================
+
+These instructions are preliminary and haven't been well tested. There are 
+likely to be other package requirements that will show when installing.
+
+Windows
+=======
+
+The PVSim.exe binary is self-contained, though to build it from source you will
+first need to download and install these packages ('x' may be anything):
+
+Python-2.7.x.msi                      http://www.python.org/download/releases/
+wxPython-2.9-win32-2.9.x.x-py26.exe   http://sourceforge.net/projects/wxpython/files/
+gcc-mingw-4.x.x-setup.exe             http://sourceforge.net/projects/mingw/files
+pyinstaller-2.0.zip                   http://www.pyinstaller.org
+
+Now go into the pvsim directory (containing this file), and type:
+
+    winbuild
+
+This should compile, link, and install the 'pvsimu' Python extension. To build and
+test the command-line version of the pvsimu backend, type:
+
+    cd src
+    winmake
+    cd ..
+    cd test
+    python pvsim_test.py
+    cd ..
+
+The final message should say "0 errors total".
+
+In the pvsim directory type:
+
+    winpack
+
+This should build the stand-alone dist\PVSim.exe.
+
+
+Linux
+=====
+
+Packages required (these are the versions I tested under Fedora 8, Linux 2.6.26,
+installed using its package manager, others are likely to work):
+
+python-2.5.1
+wxPython-2.8.9.1
+
+To build, you should be able to just type 'make' in the pvsim directory. If
+your python was installed as root, you'll need to edit the Makefile and change
+"SUDO =" to "SUDO = sudo" for the Linux case.
+
+To run, type (or configure a task-panel launcher for it):
+
+    ./pvsim.py
+
+To run the test suite, type:
+
+    make testu
+
+The final message should say "0 errors total".
+
+
+Mac OSX
+=======
+
+The PVSim.app binary is self-contained, though to build it from source you will
+first need to download and install these packages (these are some versions tested-- 
+others may work. Python may already be installed):
+
+python-2.7.1-macosx.dmg                   http://www.python.org/download/releases/
+wxPython2.9-osx-2.9.4.0-cocoa-py2.7.dmg  http://sourceforge.net/projects/wxpython/files/
+
+To build dist/PVSim.app, type 'make' in the pvsim directory.
+
+To run, double-click PVSim.app.
+
+PVSim works best with the AlphaX editor, which may be downloaded from:
+
+	http://www.macupdate.com/app/mac/11300/alphax
+
+Please report any problems with the PVSim bug tracker:
+
+	http://sourceforge.net/tracker/?group_id=107981&atid=649516
