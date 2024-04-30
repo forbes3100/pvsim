@@ -72,7 +72,7 @@ void display(const char* format, ...)
         if (!gLogFile)
         {
             char logFileName[max_nameLen];
-            sprintf(logFileName, "%s.log", gProjName);
+            snprintf(logFileName, sizeof(logFileName), "%s.log", gProjName);
             gLogFile = fopen(logFileName, "w");
             if (!gLogFile)
                 reportErrDialog("creating log file");
@@ -202,7 +202,7 @@ void* compileAndSimulate()
             gWarningCount = 0;
             clock_t startRealTime = clock();
             char projFileName[max_nameLen];
-            sprintf(projFileName, "%s.psim", gProjName);
+            snprintf(projFileName, sizeof(projFileName), "%s.psim", gProjName);
             loadProjectFile(projFileName);
             clock_t compileRealTime = clock() - startRealTime;
             if (!gQuietMode)
@@ -223,7 +223,7 @@ void* compileAndSimulate()
         strncat(eventsFileName, "Logs/PVSim.events", max_nameLen-1);
         eventsFileName[max_nameLen-1] = 0;
 #else
-        sprintf(eventsFileName, "%s.events", gProjName);
+        snprintf(eventsFileName, sizeof(eventsFileName), "%s.events", gProjName);
 
 #endif
         gEvFile = openFile(eventsFileName, "w");
