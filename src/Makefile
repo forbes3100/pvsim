@@ -6,9 +6,9 @@ all: pvsimu
 
 UNAME = uname -s
 OS = $(UNAME:sh)$(shell $(UNAME))
-#CFLAGS_EXTRA = -m32 -D$(OS)
+#CFLAGS_EXTRA = -D$(OS)
 
-CFLAGS_EXTRA = -m32 -fshort-enums
+CFLAGS_EXTRA = -fshort-enums
 
 SRC = \
   EvalSignal.cc ModelPCode.cc PVSimMain.cc \
@@ -19,7 +19,7 @@ SRC = \
 OBJ = $(SRC:.cc=.o)
 
 pvsimu: $(OBJ)
-	$(CXX) $(OBJ) -m32 -o $@
+	$(CXX) $(OBJ) -o $@
 
 clean:
 	rm -f *.o
