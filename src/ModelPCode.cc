@@ -269,34 +269,34 @@ void execCode(Model* model)
                 break;
 
             case p_bsr0:
-                result = (*(Func*)(n))();
+                result = (*(Func0*)(n))();
                 break;
 
             case p_bsr1:
-                result = (*(Func*)(n))(tos);
+                result = (*(Func1*)(n))(tos);
                 tos = *sp++;
                 break;
 
             case p_bsr2:
-                result = (*(Func*)(n))(sp[0], tos);
+                result = (*(Func2*)(n))(sp[0], tos);
                 tos = sp[1];
                 sp += 2;
                 break;
 
             case p_bsr3:
-                result = (*(Func*)(n))(sp[1], sp[0], tos);
+                result = (*(Func3*)(n))(sp[1], sp[0], tos);
                 tos = sp[2];
                 sp += 3;
                 break;
 
             case p_bsr4:
-                result = (*(Func*)(n))(sp[2], sp[1], sp[0], tos);
+                result = (*(Func4*)(n))(sp[2], sp[1], sp[0], tos);
                 tos = sp[3];
                 sp += 4;
                 break;
 
             case p_bsr5:
-                result = (*(Func*)(n))(sp[3], sp[2], sp[1], sp[0], tos);
+                result = (*(Func5*)(n))(sp[3], sp[2], sp[1], sp[0], tos);
                 tos = sp[4];
                 sp += 5;
                 break;
@@ -307,7 +307,7 @@ void execCode(Model* model)
                     arg[i] = tos;
                 for (i--; i >= 0; i--)
                     arg[i] = *sp++;
-                result = (*(Func*)(n))(arg[0], arg[1], arg[2], arg[3],
+                result = (*(Func9*)(n))(arg[0], arg[1], arg[2], arg[3],
                                     arg[4], arg[5], arg[6], arg[7], arg[8]);
                 if (pc->p.nArgs > 0)
                     tos = *sp++;

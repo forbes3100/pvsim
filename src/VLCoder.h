@@ -31,6 +31,14 @@
 // generic subroutine and function types for code pointers
 typedef void (Subr)(...);
 typedef size_t (Func)(...);
+typedef size_t (Func0)();
+typedef size_t (Func1)(size_t arg1);
+typedef size_t (Func2)(size_t arg1, size_t arg2);
+typedef size_t (Func3)(size_t arg1, size_t arg2, size_t arg3);
+typedef size_t (Func4)(size_t arg1, size_t arg2, size_t arg3, size_t arg4);
+typedef size_t (Func5)(size_t arg1, size_t arg2, size_t arg3, size_t arg4, size_t arg5);
+typedef size_t (Func9)(size_t arg1, size_t arg2, size_t arg3, size_t arg4, size_t arg5,
+                       size_t arg6, size_t arg7, size_t arg8, size_t arg9);
 typedef size_t (VariFunc)(size_t arg, ...);
 typedef void (Model::*ModelSubrPtr)(...);
 typedef size_t (Model::*ModelFuncPtr)(...);
