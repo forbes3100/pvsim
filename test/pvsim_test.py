@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
 ###############################################################################
 #
 #               PVSim Verilog Simulator Test Suite
@@ -45,7 +44,10 @@ class Logger(object):
         self.logFile.write(s)
         self.out.write(s)
 
-sys.stdout = Logger(file("pvsim_test.log", "w"))
+    def flush(self):
+        self.out.flush()
+
+sys.stdout = Logger(open("pvsim_test.log", "w"))
 
 print("Testing PVSim", time.ctime())
 print()
@@ -71,7 +73,7 @@ for vfile in vfiles:
     done = False
 
     for i, line in enumerate(ofile.readlines()):
-        line = line.strip()
+        line = line.decode('utf-8').strip()  # Decode the bytes to a string and strip whitespace
         m = resultPat.match(line)
         if m:
             # line is a test result: check it
