@@ -251,72 +251,73 @@ void execCode(Model* model)
     {
         printf("%8d: execCode(%s pc=%p sp=%p stk=%p int=%p)\n",
             (int)gTick, model->desig, pc, sp, ctxt->stack, inst);
-        if (pc->op & bit_dualOp)
-            printf("%p: %-4s %" PRIuPTR " ", pc, kPCodeName[pc->op],
-                   (uintptr_t)pc->n);
-        else if (pc->op & bit_wordOp)
-            printf("%p: %-4s %-8x ", pc, kPCodeName[pc->op], pc->w);
+        if (pc->p.op & bit_dualOp)
+            printf("%p: %-4s %" PRIuPTR " ", pc, kPCodeName[pc->p.op],
+                   (uintptr_t)(pc+1)->n);
+        else if (pc->p.op & bit_wordOp)
+            printf("%p: %-4s %-8x ", pc, kPCodeName[pc->p.op], pc->p.w);
         else
-            printf("%p: %-4s          ", pc, kPCodeName[pc->op]);
+            printf("%p: %-4s          ", pc, kPCodeName[pc->p.op]);
     }
     while (1)
     {
-        switch (pc->op)
+        size_t n = (pc+1)->n;
+        switch (pc->p.op)
         {
             case p_nop:
                 throw new VError(verr_bug, "NOP!");
                 break;
 
             case p_bsr0:
-                result = (*(Func*)(pc->n))();
+                result = (*(Func*)(n))();
                 break;
 
             case p_bsr1:
-                result = (*(Func*)(pc->n))(tos);
+                result = (*(Func*)(n))(tos);
                 tos = *sp++;
                 break;
 
             case p_bsr2:
-                result = (*(Func*)(pc->n))(sp[0], tos);
+                result = (*(Func*)(n))(sp[0], tos);
                 tos = sp[1];
                 sp += 2;
                 break;
 
             case p_bsr3:
-                result = (*(Func*)(pc->n))(sp[1], sp[0], tos);
+                result = (*(Func*)(n))(sp[1], sp[0], tos);
                 tos = sp[2];
                 sp += 3;
                 break;
 
             case p_bsr4:
-                result = (*(Func*)(pc->n))(sp[2], sp[1], sp[0], tos);
+                result = (*(Func*)(n))(sp[2], sp[1], sp[0], tos);
                 tos = sp[3];
                 sp += 4;
                 break;
 
             case p_bsr5:
-                result = (*(Func*)(pc->n))(sp[3], sp[2], sp[1], sp[0], tos);
+                result = (*(Func*)(n))(sp[3], sp[2], sp[1], sp[0], tos);
                 tos = sp[4];
                 sp += 5;
                 break;
 
             case p_bsr:
-                i = pc->nArgs - 1;
+                i = pc->p.nArgs - 1;
                 if (i >= 0)
                     arg[i] = tos;
                 for (i--; i >= 0; i--)
                     arg[i] = *sp++;
-                result = (*(Func*)(pc->n))(arg[0], arg[1], arg[2], arg[3],
+                result = (*(Func*)(n))(arg[0], arg[1], arg[2], arg[3],
                                     arg[4], arg[5], arg[6], arg[7], arg[8]);
-                if (pc->nArgs > 0)
+                if (pc->p.nArgs > 0)
                     tos = *sp++;
                 break;
 
             case p_btsk:
                 *(--sp) = (size_t)inst; // save current module variables base
                 inst = (char*)tos;      // new extScopeRef on stack
-                tos = (size_t)(pc + 1); // save return addr
-                pc = (PCode*)(pc->n);   // jump to verilog task subroutine
+                tos = (size_t)(pc + 2); // save return addr
+                pc = (PCode*)(n);       // jump to verilog task subroutine
                 goto nextOp;
 
             case p_leam:
@@ -355,13 +356,13 @@ void execCode(Model* model)
                 break;
 
             case p_br:
-                pc = (PCode*)pc->n;
+                pc = (PCode*)n;
                 goto nextOp;
 
             case p_beq:
                 if (!tos)
                 {
-                    pc = (PCode*)pc->n;
+                    pc = (PCode*)n;
                     tos = *sp++;
                     goto nextOp;
                 }
@@ -371,7 +372,7 @@ void execCode(Model* model)
             case p_bne:
                 if (tos)
                 {
-                    pc = (PCode*)pc->n;
+                    pc = (PCode*)n;
                     tos = *sp++;
                     goto nextOp;
                 }
@@ -397,68 +398,68 @@ void execCode(Model* model)
 
             case p_pick:
                 *(--sp) = tos;
-                tos = sp[pc->w];
+                tos = sp[pc->p.w];
                 break;
 
             case p_drop:
-                sp += pc->w;
+                sp += pc->p.w;
                 tos = sp[-1];
                 break;
 
             case p_li:
                 *(--sp) = tos;
-                tos = pc->n;
+                tos = n;
                 break;
 
             case p_liw:
                 *(--sp) = tos;
-                tos = pc->w;
+                tos = pc->p.w;
                 break;
 
             case p_lea:
                 *(--sp) = tos;
-                tos = (size_t)(inst + pc->n);
+                tos = (size_t)(inst + n);
                 break;
 
             case p_ld:
                 *(--sp) = tos;
-                tos = *(size_t*)(inst + pc->n);
+                tos = *(size_t*)(inst + n);
                 break;
 
             case p_lds:
                 *(--sp) = tos;
-                tos = *(char*)(*(size_t*)(inst + pc->w));
+                tos = *(char*)(*(size_t*)(inst + pc->p.w));
                 break;
 
             case p_ldx:
-                tos = *(size_t*)(tos + pc->n);
+                tos = *(size_t*)(tos + n);
                 break;
 
             case p_ldbx:
-                tos = *(char*)(tos + pc->n);
+                tos = *(char*)(tos + n);
                 break;
 
             case p_st:
-                *(size_t*)(inst + pc->n) = tos;
+                *(size_t*)(inst + n) = tos;
                 tos = *sp++;
                 break;
 
             case p_stb:
-                *(char*)(inst + pc->n) = tos;
+                *(char*)(inst + n) = tos;
                 tos = *sp++;
                 break;
 
             case p_stx:
-                *(size_t*)(tos + pc->n) = *sp++;
+                *(size_t*)(tos + n) = *sp++;
                 tos = *sp++;
                 break;
 
             case p_addi:
-                tos += pc->n;
+                tos += n;
                 break;
 
             case p_andi:
-                tos &= pc->n;
+                tos &= n;
                 break;
 
             case p_add:
@@ -525,7 +526,7 @@ void execCode(Model* model)
 
             case p_sbop:
                 // 2-operand scalar operation using table at n
-                tos = ((Level*)pc->n)[*sp++ + (tos << 4)];
+                tos = ((Level*)n)[*sp++ + (tos << 4)];
                 break;
 
             case p_not:
@@ -570,36 +571,44 @@ void execCode(Model* model)
                 goto pauseThread;
             }
             default:
-                printf("*** unknown PCode op %d\n", pc->op);
+                printf("*** unknown PCode op %d\n", pc->p.op);
                 break;
         }
 
-        // advance to next PCode-- single-op PCodes leave off 'n' field
-        pc = (PCode*)(&pc->n + ((pc->op & bit_dualOp) != 0));
+        // advance to next PCode
+        pc++;
+        if (pc->p.op & bit_dualOp)
+            pc++;
 
       nextOp:
         if (showPcode)
         {
             dumpDataStack(ctxt, sp, tos);
-            if (pc->op & bit_dualOp)
-                if (pc->n > 1000)
+            if (pc->p.op & bit_dualOp)
+            {
+                size_t n = (pc+1)->n;
+                if (n > 1000)
                     printf("%p: %-4s %-9" PRIxPTR " ", pc,
-                           kPCodeName[pc->op], (uintptr_t)pc->n);
+                           kPCodeName[pc->p.op], (uintptr_t)n);
                 else
                     printf("%p: %-4s %-9" PRIuPTR " ", pc,
-                           kPCodeName[pc->op], (uintptr_t)pc->n);
-            else if (pc->op & bit_wordOp)
-                printf("%p: %-4s %-9x ", pc, kPCodeName[pc->op], pc->w);
+                           kPCodeName[pc->p.op], (uintptr_t)n);
+            }
+            else if (pc->p.op & bit_wordOp)
+                printf("%p: %-4s %-9x ", pc, kPCodeName[pc->p.op], pc->p.w);
             else
-                printf("%p: %-4s           ", pc, kPCodeName[pc->op]);
+                printf("%p: %-4s           ", pc, kPCodeName[pc->p.op]);
         }
     }
   pauseThread:
     if (showPcode)
         dumpDataStack(ctxt, sp, tos);
 
-    // advance to next PCode-- single-op PCodes leave off 'n' field
-    ctxt->pc = (PCode*)(&pc->n + ((pc->op & bit_dualOp) != 0));
+    // advance to next PCode
+    pc++;
+    if (pc->p.op & bit_dualOp)
+        pc++;
+    ctxt->pc = pc;
     ctxt->sp = sp;
     ctxt->tos = tos;
     ctxt->inst = inst;

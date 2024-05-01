@@ -55,15 +55,6 @@ const char* kPCodeName[p_last];     // P-code names
 
 void initBackEnd()
 {
-    // sanity checks: check compiler settings
-    if ((size_t)&((PCode*)0)->n != sizeof(size_t))
-        throw new VError(verr_bug,
-                "struct PCode offset of 'n' wrong: %d instead of %d bytes\n",
-                (size_t)&((PCode*)0)->n, sizeof(size_t));
-    if (sizeof(PCode) != 2*sizeof(size_t))
-        throw new VError(verr_bug,
-                "struct PCode size wrong: %d instead of %d bytes\n",
-                sizeof(PCode), 2*sizeof(size_t));
     pcStart = 0;            // code space will be allocated as needed
     pc = 0;
     pcEnd = 0;
@@ -221,10 +212,8 @@ void codeOp(PCodeOp op)
 {
     if (debugLevel(3))
         display("%p: %s\n", pc, kPCodeName[op]);
-    pc->op = op;
-
-    // advance to next PCode-- single-op PCodes leave off 'n' field
-    pc = (PCode*)&pc->n;
+    pc->p.op = op;
+    pc++;
 }
 
 //-----------------------------------------------------------------------------
@@ -234,9 +223,9 @@ void codeOpI(PCodeOp op, size_t arg)
 {
     if (debugLevel(3))
         display("%p: %s 0x%x\n", pc, kPCodeName[op], arg);
-    pc->op = op;
-    pc->n = arg;
-    pc++;
+    pc->p.op = op;
+    (pc+1)->n = arg;
+    pc += 2;
 }
 
 //-----------------------------------------------------------------------------
@@ -246,11 +235,9 @@ void codeOpW(PCodeOp op, short arg)
 {
     if (debugLevel(3))
         display("%p: %s 0x%x\n", pc, kPCodeName[op], arg);
-    pc->op = op;
-    pc->w = arg;
-
-    // advance to next PCode-- short PCodes leave off 'n' field
-    pc = (PCode*)&pc->n;
+    pc->p.op = op;
+    pc->p.w = arg;
+    pc++;
 }
 
 //-----------------------------------------------------------------------------
@@ -426,7 +413,7 @@ void codeCall(Subr* subr, int nArgs, const char* name)
             display("            #%2d call %p (*%d)\n",
                     vc.dataStkEnd-vc.dsp, subr, nArgs);
     }
-    pc->nArgs = nArgs;
+    pc->p.nArgs = nArgs;
     PCodeOp op = p_bsr;
     switch (nArgs)
     {
@@ -499,7 +486,7 @@ void codeLoadScopeRef(Variable* extScopeRef)
 
 size_t* codeJmp()
 {
-    size_t* brAdr = &pc->n;
+    size_t* brAdr = &(pc+1)->n;
     codeOpI(p_br, 0);
     return brAdr;
 }
@@ -509,7 +496,7 @@ size_t* codeJmp()
 
 size_t* codeIf()
 {
-    size_t* brAdr = &pc->n;
+    size_t* brAdr = &(pc+1)->n;
     codeOpI(p_beq, 0);
     dropData();
     return brAdr;
@@ -520,7 +507,7 @@ size_t* codeIf()
 
 size_t* codeIfNot()
 {
-    size_t* brAdr = &pc->n;
+    size_t* brAdr = &(pc+1)->n;
     codeOpI(p_bne, 0);
     dropData();
     return brAdr;
@@ -656,7 +643,7 @@ size_t* codeCopyLVec(size_t srcDisp, size_t destDisp, size_t size)
         display(
             "            #%2d copyLVec(src=I+0x%x, dest=I+0x%x, size=0x%x)\n",
             vc.dataStkEnd-vc.dsp, srcDisp, destDisp, size);
-    size_t* destDispInstr = &pc->n;
+    size_t* destDispInstr = &(pc+1)->n;
     codeLoadAdr(destDisp);
     codeLoadAdr(srcDisp);
     codeLitInt(size);
@@ -1212,7 +1199,7 @@ void codeConcat(Expr* ex)
         if (argEx->tyCode == ty_scalar)
         {
             codeScalarExpr(argEx);
-            ap->func.catStoInstr = &pc->n;
+            ap->func.catStoInstr = &(pc+1)->n;
             codeOpI(p_stb, bit);
             bit++;
         }

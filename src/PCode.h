@@ -93,13 +93,14 @@ enum PCodeOp {
     p_sbop,     // n    scalar op TOS+1 with TOS, using table at n
     p_last };
 
-struct PCode
+union PCode
 {
-    // single-op subset
-    PCodeOp     op;     // op-code (includes bit_wordOp, bit_dualOp)
-    char        nArgs;  // number of subroutine args for p_bsr
-    short       w;      // short-word arg, if bit_wordOp set
-
+    struct PCodeSingle
+    {
+        PCodeOp     op;     // op-code (includes bit_wordOp, bit_dualOp)
+        char        nArgs;  // number of subroutine args for p_bsr
+        short       w;      // short-word arg, if bit_wordOp set
+    } p;
     size_t      n;      // dual-op stackable operand, may be a pointer
 };
 
