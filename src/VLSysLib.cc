@@ -738,16 +738,16 @@ void codeFunction(Expr* ex)
             codeCallFn((Func*)verFOpen, 1);
             break;
         case sf_flagError:
-            codeCall((Subr*)flagError, nArgs);
+            codeCall((Subr*)flagError, nArgs, 0, TRUE);
             break;
         case sf_display:
-            codeCall((Subr*)display, nArgs);
+            codeCall((Subr*)display, nArgs, 0, TRUE);
             break;
         case sf_fdisplay:
-            codeCall((Subr*)fprintf, nArgs);
+            codeCall((Subr*)fprintf, nArgs, 0, TRUE);
             break;
         case sf_annotate:
-            codeCall((Subr*)drawf, nArgs);
+            codeCall((Subr*)drawf, nArgs, 0, TRUE);
             break;
         case sf_readmemmif:
             codeModelCall((ModelSubrPtr)&ModelSysLib::readmemmif, 2);

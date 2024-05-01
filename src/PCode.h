@@ -26,9 +26,6 @@
 #include <limits.h>
 #include "VLCoder.h"
 
-const int bit_wordOp = 0x20;
-const int bit_dualOp = 0x40;
-
 // Pseudo-Codes
 
 enum PCodeOp {
@@ -63,19 +60,25 @@ enum PCodeOp {
     p_neg,      //      integer negate TOS to TOS
     p_cvis,     //      convert integer to scalar
     p_end,      //      return from pcode execution
-                // (p_end MUST BE LAST 0-OP)
-    p_liw = bit_wordOp, // w    load immediate 16-bit integer w to TOS
+
+    p_liw,      // w    load immediate 16-bit integer w to TOS
     p_lds,      // w    load byte from variable at address at inst[w]
     p_pick,     // w    pick wth item from stack
     p_drop,     // w    drop w items
 
-    p_bsr0 = bit_dualOp, // n   branch to C subroutine at n with no args
+    p_bsr0,     // n    branch to C subroutine at n with no args
     p_bsr1,     // n    branch to C subroutine at n with 1 arg
     p_bsr2,     // n    branch to C subroutine at n with 2 args
     p_bsr3,     // n    branch to C subroutine at n with 3 args
     p_bsr4,     // n    branch to C subroutine at n with 4 args
     p_bsr5,     // n    branch to C subroutine at n with 5 args
     p_bsr,      // n    branch to C subroutine at n with nArgs args
+    p_bvsr1,    // n    branch to C variadic subroutine at n with 1 arg
+    p_bvsr2,    // n    branch to C variadic subroutine at n with 2 args
+    p_bvsr3,    // n    branch to C variadic subroutine at n with 3 args
+    p_bvsr4,    // n    branch to C variadic subroutine at n with 4 args
+    p_bvsr5,    // n    branch to C variadic subroutine at n with 5 args
+    p_bvsr,     // n    branch to C variadic subroutine at n with nArgs args
     p_btsk,     // n    branch to task subroutine at n
     p_br,       // n    branch to n
     p_beq,      // n    pop TOS and branch to n if its equal to zero
@@ -93,13 +96,17 @@ enum PCodeOp {
     p_sbop,     // n    scalar op TOS+1 with TOS, using table at n
     p_last };
 
+const int first_wordOp = p_liw;
+const int first_dualOp = p_bsr0;
+
+
 union PCode
 {
     struct PCodeSingle
     {
-        PCodeOp     op;     // op-code (includes bit_wordOp, bit_dualOp)
+        PCodeOp     op;     // op-code
         char        nArgs;  // number of subroutine args for p_bsr
-        short       w;      // short-word arg, if bit_wordOp set
+        short       w;      // short-word arg, if op >= first_wordOp
     } p;
     size_t      n;      // dual-op stackable operand, may be a pointer
 };

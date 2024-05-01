@@ -31,6 +31,7 @@
 // generic subroutine and function types for code pointers
 typedef void (Subr)(...);
 typedef size_t (Func)(...);
+typedef size_t (VariFunc)(size_t arg, ...);
 typedef void (Model::*ModelSubrPtr)(...);
 typedef size_t (Model::*ModelFuncPtr)(...);
 
@@ -175,7 +176,7 @@ void codeIntExpr(Expr* ex);
 void codeScalarExpr(Expr* ex);
 void codeVectorExpr(Expr* ex, int bitWidth = -1);
 void codeSplit(short nBits);
-void codeCall(Subr* subr, int nArgs, const char* name = 0);
+void codeCall(Subr* subr, int nArgs, const char* name = 0, bool isVariadic = FALSE);
 void codeWait();
 void codeDelay();
 void codeCallFn(Func* func, int nArgs);

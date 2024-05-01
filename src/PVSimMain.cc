@@ -64,7 +64,6 @@ void display(const char* format, ...)
     va_list ap;
     va_start(ap, format);
     char msg[max_messageLen];
-    printf("format=%lu\n", (size_t)format);
     vsnprintf(msg, max_messageLen-1, format, ap);
     va_end(ap);
 

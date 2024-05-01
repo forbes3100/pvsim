@@ -251,10 +251,10 @@ void execCode(Model* model)
     {
         printf("%8d: execCode(%s pc=%p sp=%p stk=%p int=%p)\n",
             (int)gTick, model->desig, pc, sp, ctxt->stack, inst);
-        if (pc->p.op & bit_dualOp)
+        if (pc->p.op >= first_dualOp)
             printf("%p: %-4s %" PRIuPTR " ", pc, kPCodeName[pc->p.op],
                    (uintptr_t)(pc+1)->n);
-        else if (pc->p.op & bit_wordOp)
+        else if (pc->p.op >= first_wordOp)
             printf("%p: %-4s %-8x ", pc, kPCodeName[pc->p.op], pc->p.w);
         else
             printf("%p: %-4s          ", pc, kPCodeName[pc->p.op]);
@@ -313,7 +313,48 @@ void execCode(Model* model)
                     tos = *sp++;
                 break;
 
-            case p_btsk:
+            case p_bvsr1:
+                result = (*(VariFunc*)(n))(tos);
+                tos = *sp++;
+                break;
+
+            case p_bvsr2:
+                result = (*(VariFunc*)(n))(sp[0], tos);
+                tos = sp[1];
+                sp += 2;
+                break;
+
+            case p_bvsr3:
+                result = (*(VariFunc*)(n))(sp[1], sp[0], tos);
+                tos = sp[2];
+                sp += 3;
+                break;
+
+            case p_bvsr4:
+                result = (*(VariFunc*)(n))(sp[2], sp[1], sp[0], tos);
+                tos = sp[3];
+                sp += 4;
+                break;
+
+            case p_bvsr5:
+                result = (*(VariFunc*)(n))(sp[3], sp[2], sp[1], sp[0], tos);
+                tos = sp[4];
+                sp += 5;
+                break;
+
+            case p_bvsr:
+                i = pc->p.nArgs - 1;
+                if (i >= 0)
+                    arg[i] = tos;
+                for (i--; i >= 0; i--)
+                    arg[i] = *sp++;
+                result = (*(VariFunc*)(n))(arg[0], arg[1], arg[2], arg[3],
+                                    arg[4], arg[5], arg[6], arg[7], arg[8]);
+                if (pc->p.nArgs > 0)
+                    tos = *sp++;
+                break;
+
+           case p_btsk:
                 *(--sp) = (size_t)inst; // save current module variables base
                 inst = (char*)tos;      // new extScopeRef on stack
                 tos = (size_t)(pc + 2); // save return addr
@@ -576,15 +617,16 @@ void execCode(Model* model)
         }
 
         // advance to next PCode
-        pc++;
-        if (pc->p.op & bit_dualOp)
+        if (pc->p.op >= first_dualOp)
+            pc += 2;
+        else
             pc++;
 
       nextOp:
         if (showPcode)
         {
             dumpDataStack(ctxt, sp, tos);
-            if (pc->p.op & bit_dualOp)
+            if (pc->p.op >= first_dualOp)
             {
                 size_t n = (pc+1)->n;
                 if (n > 1000)
@@ -594,7 +636,7 @@ void execCode(Model* model)
                     printf("%p: %-4s %-9" PRIuPTR " ", pc,
                            kPCodeName[pc->p.op], (uintptr_t)n);
             }
-            else if (pc->p.op & bit_wordOp)
+            else if (pc->p.op >= first_wordOp)
                 printf("%p: %-4s %-9x ", pc, kPCodeName[pc->p.op], pc->p.w);
             else
                 printf("%p: %-4s           ", pc, kPCodeName[pc->p.op]);
@@ -605,8 +647,9 @@ void execCode(Model* model)
         dumpDataStack(ctxt, sp, tos);
 
     // advance to next PCode
-    pc++;
-    if (pc->p.op & bit_dualOp)
+    if (pc->p.op >= first_dualOp)
+        pc += 2;
+    else
         pc++;
     ctxt->pc = pc;
     ctxt->sp = sp;
@@ -1113,7 +1156,7 @@ void Model::test()
     size_t* ifjmp = codeIf();
     codeLitInt((size_t)"testing %d\n");
     codeLitInt(1);
-    codeCall((Subr*)&printf, 2, "printf");
+    codeCall((Subr*)&printf, 2, "printf", TRUE);
     setJmpToHere(ifjmp);
     codeLitInt(1234);
     codeLitInt(1234);
