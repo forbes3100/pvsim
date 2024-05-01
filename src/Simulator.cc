@@ -759,7 +759,6 @@ void initSignals()
     freeTempSpace(&eventSpace);
     size_t signalFactor = (gNextSignal - gSignals) / 1000 + 1;
     int minEvents = 70000;
-    // spaceForEvents > 1000000000 causes 32-bit pvsimu to fail out-of-mem
     size_t spaceForEvents = 1000000000;
     timeLineLen = (spaceForEvents/sizeof(Event) - minEvents) /
                   signalFactor + 500000;

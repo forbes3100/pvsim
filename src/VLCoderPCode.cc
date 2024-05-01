@@ -552,9 +552,9 @@ size_t* here()
 }
 
 //-----------------------------------------------------------------------------
-// Operations on 32-bit integers.
+// Integer operations.
 
-// Code a load immediate 32-bit integer.
+// Code a load immediate size_t integer.
 void codeLitInt(size_t n, int scale)
 {
     pushEmpData();
@@ -1129,7 +1129,7 @@ void codeLoadMem(Memory* mem, Variable* extScopeRef)
 // Compile a write of an integer value to a memory.
 // The memory address was pushed first on the dsp stack;
 //
-// !!! 32-bit integer width only for now
+// !!! size_t integer width only for now
 
 void codeStoMem(Memory* mem, Variable* extScopeRef)
 {
@@ -1311,7 +1311,7 @@ void codeIntExpr(Expr* ex)
                                     "can't convert to int yet");
                 tooLarge:
                     throw new VError(ex->srcLoc, verr_notYet,
-                                    "can't convert >32 bits to int yet");
+                        "can't convert >%d bits to int yet", sizeof(size_t));
                     break;
             }
             vc.dsp->setIntReg();

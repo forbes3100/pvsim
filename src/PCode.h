@@ -80,7 +80,7 @@ enum PCodeOp {
     p_br,       // n    branch to n
     p_beq,      // n    pop TOS and branch to n if its equal to zero
     p_bne,      // n    pop TOS and branch to n if its not equal to zero
-    p_li,       // n    load immediate 32-bit integer n to TOS
+    p_li,       // n    load immediate size_t integer n to TOS
     p_lea,      // n    load effective address of variable at inst[n]
     p_ld,       // n    load a variable from inst[n]
     p_ldx,      // n    load a variable from TOS[n]

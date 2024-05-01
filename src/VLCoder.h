@@ -38,12 +38,12 @@ typedef size_t (Model::*ModelFuncPtr)(...);
 
 // Data categories:
 //-----------------------------------------------------------------------------
-// Integer:         32 bits max.
+// Integer:         size_t bits max.
 // Scalar Signal:   A pointer to a signal struct, whose first byte
 //                  is a Level.
 // Vector Signal:   An array of signal pointers. Register is a pointer
 //                  to this array.
-// Integer Memory:  An array of 32-bit integers. Register a pointer.        
+// Integer Memory:  An array of size_t integers. Register a pointer.
 
 // a Parameter is only a constant at the time of instantiation, and
 // a variable may use a parameter for the width, which means that

@@ -1187,8 +1187,8 @@ void VLModule::codeParmDeclaration(bool isDefParm, char termChar)
     Range* vecRange = 0;                // get optional vector-range
     bool isVector = compileVecRange(&vecRange);
     if (isVector && !(vecRange->left.isConst && vecRange->right.isConst &&
-            vecRange->left.bit < 32 && vecRange->right.bit == 0))
-        throwExpected("32 bit size max, if given");
+            vecRange->left.bit < sizeof(size_t) && vecRange->right.bit == 0))
+        throwExpected("size_t bit size max, if given");
 
     for (;;)
     {

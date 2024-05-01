@@ -266,7 +266,7 @@ public:
     char*       repr(SignalVec* sigVecPos, int nBits);
 };
 
-// A memory array.  !!! 32-bit integer width only for now
+// A memory array.  !!! size_t integer width only for now
 // Embedded Scalar is for triggering readers when memory is changed
 class Memory : public TrigNet
 {

@@ -735,7 +735,7 @@ void Scope::initVariables(char* instModule, char* fullDesig)
                         if (!(vec->range->left.isConst &&
                               vec->range->right.isConst))
                         {
-                            bit = 32;
+                            bit = sizeof(size_t);
                             endBit = 0;
                         }
                         // create a 'bus' display-only signal first

@@ -43,15 +43,6 @@ bdist:
 	$(PYTHON) setup.py py2app
 	(cd dist; zip -r pvsim-$(VERS).macosx.zip PVSim.app)
 
-# OSX 32-bit binary distribution: PVSim.app
-bdist32:
-	(cd dist; /bin/rm -rf PVSim.app PVSim64.app)
-	$(PYTHON) setup.py py2app
-	mv dist/PVSim.app dist/PVSim64.app
-	(cd dist; ditto --rsrc --arch i386 PVSim64.app PVSim.app)
-	(cd dist; /bin/rm -rf PVSim64.app)
-	(cd dist; zip -r pvsim-$(VERS).-macosx32.zip PVSim.app)
-
 # source distribution
 sdist:
 	$(PYTHON) setup_ext.py sdist

@@ -27,7 +27,7 @@
 #include "PSignal.h"
 
 //-----------------------------------------------------------------------------
-// Grab a 32-bit operand, a signal's offset into the gSignals array, add it
+// Grab a long-sized operand, a signal's offset into the gSignals array, add it
 // to the gSignals base, and return the character there.
 // Increments the code pointer.
 

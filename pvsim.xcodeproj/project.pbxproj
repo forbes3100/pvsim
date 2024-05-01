@@ -60,6 +60,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D25D4EA72BE1BCCE00EAAA6A /* examples */ = {isa = PBXFileReference; lastKnownFileType = folder; path = examples; sourceTree = "<group>"; };
+		D25D4EA82BE1BCD800EAAA6A /* test */ = {isa = PBXFileReference; lastKnownFileType = folder; path = test; sourceTree = "<group>"; };
+		D25D4EA92BE1BD6600EAAA6A /* MANIFEST.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = MANIFEST.in; sourceTree = "<group>"; };
+		D25D4EAA2BE1BD6600EAAA6A /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		D269DD9D163660EA00D01308 /* pvsimu */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = pvsimu; sourceTree = BUILT_PRODUCTS_DIR; };
 		D269DDAF1636614200D01308 /* EvalSignal.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = EvalSignal.cc; sourceTree = "<group>"; };
 		D269DDB11636614200D01308 /* ModelPCode.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelPCode.cc; sourceTree = "<group>"; };
@@ -158,6 +162,10 @@
 		D269DD92163660EA00D01308 = {
 			isa = PBXGroup;
 			children = (
+				D25D4EAA2BE1BD6600EAAA6A /* Makefile */,
+				D25D4EA92BE1BD6600EAAA6A /* MANIFEST.in */,
+				D25D4EA82BE1BCD800EAAA6A /* test */,
+				D25D4EA72BE1BCCE00EAAA6A /* examples */,
 				D27C2D802BE0292F0034BE0F /* pvsim.py */,
 				D250B7E02BE069C300E5915B /* src */,
 				D27C2D842BE029620034BE0F /* rsrc */,
