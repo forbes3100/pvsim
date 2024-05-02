@@ -313,42 +313,78 @@ void execCode(Model* model)
                     tos = *sp++;
                 break;
 
-            case p_bvsr1:
-                result = (*(VariFunc*)(n))(tos);
+            case p_bsr1v1:
+                result = (*(VariFunc1*)(n))(tos);
                 tos = *sp++;
                 break;
 
-            case p_bvsr2:
-                result = (*(VariFunc*)(n))(sp[0], tos);
+            case p_bsr2v1:
+                result = (*(VariFunc1*)(n))(sp[0], tos);
                 tos = sp[1];
                 sp += 2;
                 break;
 
-            case p_bvsr3:
-                result = (*(VariFunc*)(n))(sp[1], sp[0], tos);
+            case p_bsr3v1:
+                result = (*(VariFunc1*)(n))(sp[1], sp[0], tos);
                 tos = sp[2];
                 sp += 3;
                 break;
 
-            case p_bvsr4:
-                result = (*(VariFunc*)(n))(sp[2], sp[1], sp[0], tos);
+            case p_bsr4v1:
+                result = (*(VariFunc1*)(n))(sp[2], sp[1], sp[0], tos);
                 tos = sp[3];
                 sp += 4;
                 break;
 
-            case p_bvsr5:
-                result = (*(VariFunc*)(n))(sp[3], sp[2], sp[1], sp[0], tos);
+            case p_bsr5v1:
+                result = (*(VariFunc1*)(n))(sp[3], sp[2], sp[1], sp[0], tos);
                 tos = sp[4];
                 sp += 5;
                 break;
 
-            case p_bvsr:
+            case p_bsrv1:
                 i = pc->p.nArgs - 1;
                 if (i >= 0)
                     arg[i] = tos;
                 for (i--; i >= 0; i--)
                     arg[i] = *sp++;
-                result = (*(VariFunc*)(n))(arg[0], arg[1], arg[2], arg[3],
+                result = (*(VariFunc1*)(n))(arg[0], arg[1], arg[2], arg[3],
+                                    arg[4], arg[5], arg[6], arg[7], arg[8]);
+                if (pc->p.nArgs > 0)
+                    tos = *sp++;
+                break;
+
+            case p_bsr2v2:
+                result = (*(VariFunc2*)(n))(sp[0], tos);
+                tos = sp[1];
+                sp += 2;
+                break;
+
+            case p_bsr3v2:
+                result = (*(VariFunc2*)(n))(sp[1], sp[0], tos);
+                tos = sp[2];
+                sp += 3;
+                break;
+
+            case p_bsr4v2:
+                result = (*(VariFunc2*)(n))(sp[2], sp[1], sp[0], tos);
+                tos = sp[3];
+                sp += 4;
+                break;
+
+            case p_bsr5v2:
+                result = (*(VariFunc2*)(n))(sp[3], sp[2], sp[1], sp[0], tos);
+                tos = sp[4];
+                sp += 5;
+                break;
+
+            case p_bsrv2:
+                i = pc->p.nArgs - 1;
+                if (i >= 0)
+                    arg[i] = tos;
+                for (i--; i >= 0; i--)
+                    arg[i] = *sp++;
+                result = (*(VariFunc2*)(n))(arg[0], arg[1], arg[2], arg[3],
                                     arg[4], arg[5], arg[6], arg[7], arg[8]);
                 if (pc->p.nArgs > 0)
                     tos = *sp++;
@@ -1156,7 +1192,7 @@ void Model::test()
     size_t* ifjmp = codeIf();
     codeLitInt((size_t)"testing %d\n");
     codeLitInt(1);
-    codeCall((Subr*)&printf, 2, "printf", TRUE);
+    codeCall((Subr*)&printf, 2, "printf", 1);
     setJmpToHere(ifjmp);
     codeLitInt(1234);
     codeLitInt(1234);

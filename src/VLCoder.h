@@ -39,7 +39,13 @@ typedef size_t (Func4)(size_t arg1, size_t arg2, size_t arg3, size_t arg4);
 typedef size_t (Func5)(size_t arg1, size_t arg2, size_t arg3, size_t arg4, size_t arg5);
 typedef size_t (Func9)(size_t arg1, size_t arg2, size_t arg3, size_t arg4, size_t arg5,
                        size_t arg6, size_t arg7, size_t arg8, size_t arg9);
-typedef size_t (VariFunc)(size_t arg, ...);
+typedef size_t (VariFunc1)(size_t arg1, ...);
+typedef size_t (VariFunc2)(size_t arg1, size_t arg2, ...);
+typedef size_t (VariFunc3)(size_t arg1, size_t arg2, size_t arg3, ...);
+typedef size_t (VariFunc4)(size_t arg1, size_t arg2, size_t arg3, size_t arg4, ...);
+typedef size_t (VariFunc5)(size_t arg1, size_t arg2, size_t arg3, size_t arg4, size_t arg5, ...);
+typedef size_t (VariFunc9)(size_t arg1, size_t arg2, size_t arg3, size_t arg4, size_t arg5,
+                           size_t arg6, size_t arg7, size_t arg8, size_t arg9, ...);
 typedef void (Model::*ModelSubrPtr)(...);
 typedef size_t (Model::*ModelFuncPtr)(...);
 
@@ -184,7 +190,7 @@ void codeIntExpr(Expr* ex);
 void codeScalarExpr(Expr* ex);
 void codeVectorExpr(Expr* ex, int bitWidth = -1);
 void codeSplit(short nBits);
-void codeCall(Subr* subr, int nArgs, const char* name = 0, bool isVariadic = FALSE);
+void codeCall(Subr* subr, int nArgs, const char* name = 0, int nVariPreArgs = 0);
 void codeWait();
 void codeDelay();
 void codeCallFn(Func* func, int nArgs);

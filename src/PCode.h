@@ -67,18 +67,23 @@ enum PCodeOp {
     p_drop,     // w    drop w items
 
     p_bsr0,     // n    branch to C subroutine at n with no args
-    p_bsr1,     // n    branch to C subroutine at n with 1 arg
-    p_bsr2,     // n    branch to C subroutine at n with 2 args
-    p_bsr3,     // n    branch to C subroutine at n with 3 args
-    p_bsr4,     // n    branch to C subroutine at n with 4 args
-    p_bsr5,     // n    branch to C subroutine at n with 5 args
-    p_bsr,      // n    branch to C subroutine at n with nArgs args
-    p_bvsr1,    // n    branch to C variadic subroutine at n with 1 arg
-    p_bvsr2,    // n    branch to C variadic subroutine at n with 2 args
-    p_bvsr3,    // n    branch to C variadic subroutine at n with 3 args
-    p_bvsr4,    // n    branch to C variadic subroutine at n with 4 args
-    p_bvsr5,    // n    branch to C variadic subroutine at n with 5 args
-    p_bvsr,     // n    branch to C variadic subroutine at n with nArgs args
+    p_bsr1,     // n    1 arg
+    p_bsr2,     // n    2 args
+    p_bsr3,     // n    3 args
+    p_bsr4,     // n    4 args
+    p_bsr5,     // n    5 args
+    p_bsr,      // n    nArgs args
+    p_bsr1v1,   // n    branch to C sub at n with 1 arg, 1 pre-variadic arg
+    p_bsr2v1,   // n    2 args
+    p_bsr3v1,   // n    3 args
+    p_bsr4v1,   // n    4 args
+    p_bsr5v1,   // n    5 args
+    p_bsrv1,    // n    nArgs args
+    p_bsr2v2,   // n    branch to C sub at n with 2 args, 2 pre-variadic args
+    p_bsr3v2,   // n    3 args
+    p_bsr4v2,   // n    4 args
+    p_bsr5v2,   // n    5 args
+    p_bsrv2,    // n    nArgs args
     p_btsk,     // n    branch to task subroutine at n
     p_br,       // n    branch to n
     p_beq,      // n    pop TOS and branch to n if its equal to zero

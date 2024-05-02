@@ -110,12 +110,17 @@ void initBackEnd()
         kPCodeName[p_bsr4] =        "bsr4";
         kPCodeName[p_bsr5] =        "bsr5";
         kPCodeName[p_bsr] =         "bsr";
-        kPCodeName[p_bvsr1] =       "bvsr1";
-        kPCodeName[p_bvsr2] =       "bvsr2";
-        kPCodeName[p_bvsr3] =       "bvsr3";
-        kPCodeName[p_bvsr4] =       "bvsr4";
-        kPCodeName[p_bvsr5] =       "bvsr5";
-        kPCodeName[p_bvsr] =        "bvsr";
+        kPCodeName[p_bsr1v1] =      "bsr1v1";
+        kPCodeName[p_bsr2v1] =      "bsr2v1";
+        kPCodeName[p_bsr3v1] =      "bsr3v1";
+        kPCodeName[p_bsr4v1] =      "bsr4v1";
+        kPCodeName[p_bsr5v1] =      "bsr5v1";
+        kPCodeName[p_bsrv1] =       "bsrv1";
+        kPCodeName[p_bsr2v2] =      "bsr2v2";
+        kPCodeName[p_bsr3v2] =      "bsr3v2";
+        kPCodeName[p_bsr4v2] =      "bsr4v2";
+        kPCodeName[p_bsr5v2] =      "bsr5v2";
+        kPCodeName[p_bsrv2] =       "bsrv2";
         kPCodeName[p_btsk] =        "btsk";
         kPCodeName[p_br] =          "br";
         kPCodeName[p_beq] =         "beq";
@@ -409,7 +414,7 @@ void codeOp2(PCodeOp op)
 // Arguments are expected to be pushed on data stack in calling order,
 // but are passed to subroutine in C order.
 
-void codeCall(Subr* subr, int nArgs, const char* name, bool isVariadic)
+void codeCall(Subr* subr, int nArgs, const char* name, int nVariPreArgs)
 {
     if (debugLevel(3))
     {
@@ -422,29 +427,45 @@ void codeCall(Subr* subr, int nArgs, const char* name, bool isVariadic)
     }
     pc->p.nArgs = nArgs;
     PCodeOp op = p_bsr;
-    if (isVariadic)
+    switch (nVariPreArgs)
     {
-        switch (nArgs)
-        {
-            case 1: op = p_bvsr1; break;
-            case 2: op = p_bvsr2; break;
-            case 3: op = p_bvsr3; break;
-            case 4: op = p_bvsr4; break;
-            case 5: op = p_bvsr5; break;
-            default: op = p_bvsr; break;
-        }
-    }
-    else
-    {
-        switch (nArgs)
-        {
-            case 0: op = p_bsr0; break;
-            case 1: op = p_bsr1; break;
-            case 2: op = p_bsr2; break;
-            case 3: op = p_bsr3; break;
-            case 4: op = p_bsr4; break;
-            case 5: op = p_bsr5; break;
-        }
+        case 0:
+            switch (nArgs)
+            {
+                case 0: op = p_bsr0; break;
+                case 1: op = p_bsr1; break;
+                case 2: op = p_bsr2; break;
+                case 3: op = p_bsr3; break;
+                case 4: op = p_bsr4; break;
+                case 5: op = p_bsr5; break;
+            }
+            break;
+        case 1:
+            switch (nArgs)
+                {
+                    case 1: op = p_bsr1v1; break;
+                    case 2: op = p_bsr2v1; break;
+                    case 3: op = p_bsr3v1; break;
+                    case 4: op = p_bsr4v1; break;
+                    case 5: op = p_bsr5v1; break;
+                    default: op = p_bsrv1; break;
+                }
+            break;
+        case 2:
+            switch (nArgs)
+                {
+                    case 2: op = p_bsr2v2; break;
+                    case 3: op = p_bsr3v2; break;
+                    case 4: op = p_bsr4v2; break;
+                    case 5: op = p_bsr5v2; break;
+                    default: op = p_bsrv2; break;
+                }
+            break;
+        default:
+            throw new VError(verr_bug,
+                "BUG: unsupported p_bsr combination: nArgs=%d, nVariPreArgs=%d",
+                             nArgs, nVariPreArgs);
+            break;
     }
     codeOpI(op, (size_t)subr);
     dropData(nArgs);
