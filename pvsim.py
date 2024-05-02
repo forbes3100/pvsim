@@ -166,6 +166,8 @@ class SimThread(threading.Thread):
                     frame.sigs, frame.nTicks, frame.barSignal = result
                     printBE("nTicks= %d bar=%s\n" %
                             (frame.nTicks, frame.barSignal))
+                    ##printBE(f"\n{frame.sigs=}\n")
+                    ##printBE(f"\n{frame.sigs[6].events=}\n")
             except:
                 printBE("*** ERROR: pvsimu.Simulate() exception: %s" %
                         traceback.format_exc())
@@ -453,7 +455,7 @@ class TimingPane(wx.ScrolledWindow):
     def X2T(self, x):
         p = self.frame.p
         xsPos = self.GetScrollPos(wx.HORIZONTAL)
-        t = (x + xsPos * self.wScroll - self.wNames) / p.wTick
+        t = (x + xsPos * self.wScroll - self.wNames) // p.wTick
         return t
 
     #--------------------------------------------------------------------------
@@ -619,13 +621,13 @@ class TimingPane(wx.ScrolledWindow):
             # include bus-value text if there's room for it
             nbits = abs(sig.lsub - sig.rsub) + 1
             if showText and isinstance(vp, int):
-                valName = "%0*X" % ((nbits+2)/4, vp)
+                valName = "%0*X" % ((nbits+2)//4, vp)
                 (w, h) = dc.GetTextExtent(valName)
                 if x-w-2 > xp:
-                    dxp = min((x - xp)/2, 100)
+                    dxp = min((x - xp)//2, 100)
                     self.texts.append(valName)
                     bl = self.textBaseline
-                    self.textCoords.append((xp + dxp - w/2,
+                    self.textCoords.append((xp + dxp - w//2,
                                             yL - self.hName + 2 - bl))
                     self.textFGs.append(wx.BLACK)
 
@@ -763,10 +765,10 @@ class TimingPane(wx.ScrolledWindow):
                         barName = "%g" % (t / ticksNS)
                         if showText:
                             (w, h) = dc.GetTextExtent(barName)
-                            if x-w/2-5 > xtext:
+                            if x-w//2-5 > xtext:
                                 dc.SetTextForeground(dkblue)
-                                dc.DrawText(barName, x-w/2, 2-bl)
-                                xtext = x + w/2
+                                dc.DrawText(barName, x-w//2, 2-bl)
+                                xtext = x + w//2
                                 haveDrawnBars = True
                         dc.SetPen(gridPen)
                         dc.DrawLine(x, hRow, x, ymax)
@@ -784,7 +786,7 @@ class TimingPane(wx.ScrolledWindow):
                         (w, h) = dc.GetTextExtent(barName)
                         if x-w-5 > xtext:
                             dc.SetTextForeground(dkblue)
-                            dc.DrawText(barName, x-w/2, 2-bl)
+                            dc.DrawText(barName, x-w//2, 2-bl)
                             xtext = x
                         ##dc.SetPen(gridPen)
                         ##dc.DrawLine(x, hRow, x, ymax)
@@ -831,7 +833,7 @@ class TimingPane(wx.ScrolledWindow):
                                             and abs(tMouse - t) < 500):
                                         # snap mouse ptr to nearby edge
                                         xyEdgeHilite = (x + x0,
-                                                yL-self.hHL/2 + y0)
+                                                yL-self.hHL//2 + y0)
                                         tMouse = t
                                     
                                     if sig.isBus or vp == "X":
@@ -911,7 +913,7 @@ class TimingPane(wx.ScrolledWindow):
             if self.tiCursorsStart:
                 tMouse = self.tiCursorsStart[0]
         if tMouse:
-            s = locale.format("%%3.%df" % tickPlaces, float(tMouse)/ticksNS,
+            s = locale._format("%%3.%df" % tickPlaces, float(tMouse)/ticksNS,
                               grouping=True)
             if self.tTimeCursor:
                 dc.DrawText(s, x0+1, y0+2-bl)
@@ -934,7 +936,7 @@ class TimingPane(wx.ScrolledWindow):
                   xm, xm0 = xm0, xm
                 dc.DrawRectangle(xm0, y0, xm - xm0, yend - y0)
                 dt = float(abs(self.tTimeCursor - tm0)) / ticksNS
-                s = locale.format("%%3.%df" % tickPlaces, dt, grouping=True)
+                s = locale._format("%%3.%df" % tickPlaces, dt, grouping=True)
                 dc.DrawText("\u0394%s ns" % s, x0+65, y0+2-bl)
 
         if xyEdgeHilite:
@@ -1147,7 +1149,7 @@ class TimingPane(wx.ScrolledWindow):
 
         if i0 >= 0:
             wWin, hWin = self.GetClientSize()
-            p.ysPos = (i0*self.hRow - hWin/2) / self.hRow
+            p.ysPos = (i0*self.hRow - hWin//2) // self.hRow
             p.xsPos = self.GetScrollPos(wx.HORIZONTAL)
             self.haveSPos = False
             self.AdjustMyScrollbars()
@@ -1849,6 +1851,19 @@ class PVSimFrame(wx.Frame):
             print(event.msg, end="")
         else:
             self.worker = None
+
+            # convert strings from backend to Unicode
+            for sig in list(self.timingP.frame.sigs.values()):
+                ##print(sig.name)
+                convertedEvents = []
+                for t, level in pairwise(sig.events):
+                    ##print(f"{t} {level}", end="")
+                    if type(level) is type(b""):
+                        level = level.decode('utf-8')
+                    ##print(f" {level}")
+                    convertedEvents.append(t)
+                    convertedEvents.append(level)
+                sig.events = convertedEvents
 
             # draw results in timing pane
             self.timingP.AdjustMyScrollbars()
