@@ -19,6 +19,8 @@ SRC = \
 OBJ = $(SRC:.cc=.o)
 
 pvsimu: $(OBJ)
+	rm -f Version.o
+	$(CXX) $(CXXFLAGS) $(CXXFLAGS_$@) -c Version.cc
 	$(CXX) $(OBJ) -o $@
 
 clean:
