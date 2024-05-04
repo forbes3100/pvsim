@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pvsim"
+version = "6.2.2b1"
+description = "Portable Verilog Simulator"
+authors = [{ name = "Scott Forbes" }]
+dependencies = [
+    "wxPython",
+    "pypubsub"
+]
