@@ -1,11 +1,9 @@
-include COPYING README.rst.txt INSTALL.txt
+include LICENSE README.md README.rst.txt INSTALL.txt
 include Makefile MANIFEST.in TODO
 include examples/example1.psim examples/example1.v
-include gotoFileLocation.tcl
-include OrderedDict.py
 include PVSim_Dev.app/Contents/Info.plist
 include PVSim_Dev.app/Contents/MacOS/PVSim
-include PVSim_Dev.app/Contents/MacOS/Python
+include PVSim_Dev.app/Contents/MacOS/python3
 include PVSim_Dev.app/Contents/PkgInfo
 include PVSim_Dev.app/Contents/Resources/PVSim_app.icns
 include PVSim_Dev.app/Contents/Resources/pvsim.py
@@ -14,7 +12,7 @@ include pvsim.xcodeproj/project.pbxproj
 include pvsim.xcodeproj/project.xcworkspace/contents.xcworkspacedata
 include rsrc/PVSim_app_icon128.ico
 include rsrc/PVSim_app.icns
-include ez_setup.py setup.py setup_ext.py pvsim.spec
+include setup.py setup_ext.py pvsim.spec
 include showprof.py
 include src/Makefile src/*.cc src/*.h src/winmake.bat
 include test/Makefile test/*.order test/*.psim test/*.v test/pvsim_test.py
