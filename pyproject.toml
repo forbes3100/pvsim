@@ -1,6 +1,9 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools", "wheel", "py2app"]
 build-backend = "setuptools.build_meta"
+
+[tool.py2app]
+script = "pvsim.py"
 
 [project]
 name = "pvsim"
