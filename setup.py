@@ -34,8 +34,7 @@ if sys.platform == "darwin":
                 CFBundleVersion=version,
                 NSHumanReadableCopyright=copyright,
             ),
-            resources=["gotoFileLocation.tcl",
-                       "examples/example1.psim",
+            resources=["examples/example1.psim",
                        "examples/example1.v"],
         )),
     )
