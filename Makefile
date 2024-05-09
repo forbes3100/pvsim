@@ -39,6 +39,7 @@ pvsimu_ext: PVSim_Dev.app/Contents/MacOS/$(PYTHON)
 
 # OSX binary distribution: PVSim.app
 bdist:
+	mkdir -p dist
 	(cd dist; /bin/rm -rf PVSim.app)
 	$(PYTHON) setup.py py2app
 	(cd dist; zip -r pvsim-$(VERS).macosx.zip PVSim.app)
