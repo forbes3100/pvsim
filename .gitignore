@@ -24,3 +24,4 @@ Output
 xcuserdata
 xcshareddata
 __pycache__
+.eggs/
