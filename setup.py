@@ -28,6 +28,7 @@ if sys.platform == "darwin":
         options=dict(py2app=dict(
             iconfile="rsrc/PVSim_app.icns",
             includes=["pvsimu"],
+            excludes=["numpy", "PIL"],  # Exclude numpy and PIL explicitly
             plist=dict(
                 CFBundleGetInfoString="Verilog Simulator",
                 CFBundleIdentifier="net.sf.pvsim",
