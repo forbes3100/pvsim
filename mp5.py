@@ -1,6 +1,5 @@
 # Proof-of-principle for PVSim multiprocessing-based simulation
 
-from __future__ import print_function
 import multiprocessing as mp
 from multiprocessing import managers
 import time
@@ -21,7 +20,7 @@ class Signal(object):
         self._x = x
 
     def __str__(self):
-        return "Signal('%s', %d)" % (self._name, self._x)
+        return f"Signal('{self._name}', {self._x})"
 
     def __repr__(self):
         return self.__str__()
@@ -31,13 +30,14 @@ data = (
     ['e', '1'], ['f', '3'], ['g', '5'], ['h', '7']
 )
 
-def mp_worker((q, proc_name, cnt, want_sigs)):
+def mp_worker(parms):
+    (q, proc_name, cnt, want_sigs) = parms
     cnt = int(cnt)
-    q.put("Process %s\t%dM loops" % (proc_name, cnt))
+    q.put(f"Process {proc_name}\t{cnt}M loops")
     acc = 1.
     for i in range(cnt*1000000):
         acc += i * 3.456
-    q.put("Process %s\tDONE %g" % (proc_name, acc))
+    q.put(f"Process {proc_name}\tDONE {acc}")
     sigs = [Signal(proc_name, i) for i in range(cnt)]
     return (None, sigs)[want_sigs]
 
