@@ -66,20 +66,12 @@ Mac OSX
 =======
 
 The PVSim.app binary is self-contained, though to build it from source you will
-first need to download and install these packages (these are some versions tested-- 
-others may work. Python may already be installed):
+first need to download and install these packages (these are some versions
+tested-- others may work. Python may already be installed):
 
-python-2.7.1-macosx.dmg                   http://www.python.org/download/releases/
-wxPython2.9-osx-2.9.4.0-cocoa-py2.7.dmg  http://sourceforge.net/projects/wxpython/files/
+xargs brew install < requirements_brew.txt
+pip install -r requirements_pip.txt
 
 To build dist/PVSim.app, type 'make' in the pvsim directory.
 
 To run, double-click PVSim.app.
-
-PVSim works best with the AlphaX editor, which may be downloaded from:
-
-	http://www.macupdate.com/app/mac/11300/alphax
-
-Please report any problems with the PVSim bug tracker:
-
-	http://sourceforge.net/tracker/?group_id=107981&atid=649516
