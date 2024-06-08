@@ -2,7 +2,8 @@
 # Top-Level Makefile for PVSim Verilog Simulator
 #
 
-PYTHON = python3
+# note: Python 3.12 has removed Unicode_GET_SIZE needed by wxPython 4.2.0
+PYTHON = python3.10
 
 # set SUDO = sudo if installing the Python extension requires it
 OSTYPE = $(shell uname)
