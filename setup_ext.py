@@ -29,7 +29,7 @@ module1 = Extension("pvsimu",
                     extra_compile_args = ["-fshort-enums"])
 
 if __name__ == "__main__":
-    setup (name = "pvsim",
+    setup (name = "pvsimu",
            version = version,
            author = "Scott Forbes",
            url = "http://github.com/pvsim/",

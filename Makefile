@@ -3,7 +3,11 @@
 #
 
 # note: Python 3.12 has removed Unicode_GET_SIZE needed by wxPython 4.2.0
-PYTHON = python3.10
+# note: Python 3.11 doesn't bring the app to the front (work around it?)
+#PYTHON = python3.10
+
+# Use the virtual environment's Python interpreter
+PYTHON = venv/bin/python
 
 # set SUDO = sudo if installing the Python extension requires it
 OSTYPE = $(shell uname)
@@ -13,7 +17,11 @@ else
 	SUDO = sudo
 endif
 
-all: pvsimu_ext
+all: activate pvsimu_ext
+
+# Ensure the virtual environment is activated
+activate:
+	. venv/bin/activate
 
 VERSLINE = $(shell grep gPSVersion src/Version.cc)
 VERS1 = $(filter "%";,$(VERSLINE))
@@ -31,12 +39,12 @@ testu: pvsimu
 	(cd test; make)
 
 # create a soft link for Python_Dev.app to the current python
-PVSim_Dev.app/Contents/MacOS/$(PYTHON):
-	ln -s `which python3` PVSim_Dev.app/Contents/MacOS/$(PYTHON)
+PVSim_Dev.app/Contents/MacOS/python:
+	ln -s `which python3` PVSim_Dev.app/Contents/MacOS/python
 
 # backend, as a Python extension
-pvsimu_ext: PVSim_Dev.app/Contents/MacOS/$(PYTHON)
-	$(PYTHON) setup_ext.py build -g install --user
+pvsimu_ext: PVSim_Dev.app/Contents/MacOS/python
+	$(PYTHON) setup_ext.py build -g install --prefix=$(shell $(PYTHON) -c 'import site; print(site.getsitepackages()[0])')
 
 # OSX binary distribution: PVSim.app
 bdist:
@@ -56,3 +64,5 @@ clean:
 distclean: clean
 	(cd src; make distclean)
 	/bin/rm -rf build dist distribute-* *.pyc pvsimu
+
+.PHONY: activate pvsimu_ext bdist sdist clean distclean
