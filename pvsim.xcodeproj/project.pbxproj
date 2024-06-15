@@ -60,7 +60,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		D22AF8342BE472CB00DF6FEE /* pyproject.toml */ = {isa = PBXFileReference; lastKnownFileType = text; path = pyproject.toml; sourceTree = "<group>"; };
 		D25D4EA72BE1BCCE00EAAA6A /* examples */ = {isa = PBXFileReference; lastKnownFileType = folder; path = examples; sourceTree = "<group>"; };
 		D25D4EA82BE1BCD800EAAA6A /* test */ = {isa = PBXFileReference; lastKnownFileType = folder; path = test; sourceTree = "<group>"; };
 		D25D4EA92BE1BD6600EAAA6A /* MANIFEST.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = MANIFEST.in; sourceTree = "<group>"; };
@@ -164,7 +163,6 @@
 			isa = PBXGroup;
 			children = (
 				D25D4EAA2BE1BD6600EAAA6A /* Makefile */,
-				D22AF8342BE472CB00DF6FEE /* pyproject.toml */,
 				D25D4EA92BE1BD6600EAAA6A /* MANIFEST.in */,
 				D25D4EA82BE1BCD800EAAA6A /* test */,
 				D25D4EA72BE1BCCE00EAAA6A /* examples */,
