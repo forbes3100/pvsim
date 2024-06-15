@@ -21,6 +21,9 @@ for line in open(mainscript).readlines():
     elif line.startswith("guiVersion ="):
         version = line.split("=")[1].strip().replace('"', '')
 
+# Define dependencies
+dependencies = ["wxPython", "pypubsub", "pvsimu"]
+
 if sys.platform == "darwin":
     extra_options = dict(
         setup_requires=["py2app"],
@@ -50,6 +53,8 @@ else:
 
 setup(
     name="PVSim",
+    version=version,
     ext_modules=[],
+    install_requires=dependencies,
     **extra_options
 )
