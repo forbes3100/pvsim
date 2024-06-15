@@ -92,9 +92,7 @@ FILE* openFile(const char* name, const char* permission, bool createIfMissing)
 
 void initFiles()
 {
-    register int    i;
-
-    for (i = 0; i < MAX_OPEN_FILES; i++)
+    for (int i = 0; i < MAX_OPEN_FILES; i++)
         curOpenFiles[i] = 0;
 }
 
@@ -103,9 +101,7 @@ void initFiles()
 
 void closeFile(FILE* file)
 {
-    register int    i;
-
-    for (i = 0; i < MAX_OPEN_FILES; i++)
+    for (int i = 0; i < MAX_OPEN_FILES; i++)
         if (curOpenFiles[i] == file)
         {
             fclose(file);
