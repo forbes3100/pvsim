@@ -14,11 +14,29 @@ else
 	SUDO = sudo
 endif
 
-all: pvsimu_ext
+all: bdist
 
+PYTHON_VERSION = $(shell $(PYTHON) -c 'import sys; print("cp" + "".join(map(str, sys.version_info[:2])))')
 VERSLINE = $(shell grep gPSVersion src/Version.cc)
 VERS1 = $(filter "%";,$(VERSLINE))
 VERS = $(patsubst "%";,%,$(VERS1))
+
+# Extract system information
+OS_NAME1 = $(shell uname -s | tr '[:upper:]' '[:lower:]')
+OS_NAME = $(patsubst darwin,macosx,$(OS_NAME1))
+OS_MAJOR_VERSION = $(shell sw_vers -productVersion | cut -d. -f1)
+ABI_TAG = 0
+ARCH = $(shell uname -m)
+
+WHEEL_FILE = dist/pvsimu-$(VERS)-$(PYTHON_VERSION)-$(PYTHON_VERSION)-$(OS_NAME)_$(OS_MAJOR_VERSION)_$(ABI_TAG)_$(ARCH).whl
+
+info_check:
+	echo $(PYTHON_VERSION)
+	echo $(OS_NAME)
+	echo $(OS_MAJOR_VERSION)
+	echo $(ABI_TAG)
+	echo $(ARCH)
+	echo $(WHEEL_FILE)
 
 FORCE:
 
@@ -42,16 +60,20 @@ PVSim_Dev.app/Contents/MacOS/$(PYTHON):
 	ln -s `which python3` PVSim_Dev.app/Contents/MacOS/$(PYTHON)
 
 # backend, as a Python extension
-pvsimu_ext: PVSim_Dev.app/Contents/MacOS/$(PYTHON)
+$(WHEEL_FILE): setup_ext.py
 	$(PYTHON) setup_ext.py bdist_wheel
 	$(PYTHON) -m pip install dist/pvsimu-*.whl
 
 # OSX binary distribution: PVSim.app
-bdist:
-	mkdir -p dist
-	(cd dist; /bin/rm -rf PVSim.app)
+dist/PVSim.app: $(WHEEL_FILE) setup.py
+	/bin/rm -rf dist/PVSim.app
 	$(PYTHON) setup.py py2app
-	(cd dist; zip -r pvsim-$(VERS).macosx.zip PVSim.app)
+
+dist/pvsim-$(VERS).macosx.zip: dist/PVSim.app
+	cd dist && zip -r pvsim-$(VERS).macosx.zip PVSim.app
+
+# Alias for building the distribution
+bdist: dist/pvsim-$(VERS).macosx.zip
 
 # source distribution
 sdist:
