@@ -56,8 +56,10 @@ run:
 	open dist/PVSim.app
 
 # create a soft link for Python_Dev.app to the current python
-PVSim_Dev.app/Contents/MacOS/$(PYTHON):
-	ln -s `which python3` PVSim_Dev.app/Contents/MacOS/$(PYTHON)
+dev: PVSim_Dev.app/Contents/MacOS/python
+
+PVSim_Dev.app/Contents/MacOS/python:
+	ln -s `which $(PYTHON)` PVSim_Dev.app/Contents/MacOS/python
 
 # backend, as a Python extension
 $(WHEEL_FILE): setup_ext.py
