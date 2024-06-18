@@ -38,7 +38,6 @@ import unittest
 ##_ = wx.GetTranslation
 from optparse import OptionParser
 import socket
-from threading import Thread
 from pubsub import pub
 
 import multiprocessing as mp
@@ -342,38 +341,46 @@ class Logger(object):
 #==============================================================================
 # Inter-Process Communication Thread.
 
-class IPCThread(Thread):
+class IPCThread(threading.Thread):
     def __init__(self):
-        Thread.__init__(self)
+        threading.Thread.__init__(self)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind(("127.0.0.1", 8080))
         self.socket.listen(5)
         self.daemon = True
+        self.running = True
         self.start()
 
-    #--------------------------------------------------------------------------
-
     def run(self):
-        while True:
+        while self.running:
             try:
                 client, addr = self.socket.accept()
                 rlines = client.recv(4096).split()
-                client.send("\n")
+                client.send(b"\n")
                 client.close()
-                try:
-                    i = rlines.index("GET")
-                    if i >= 0 and len(rlines) > i:
-                        cmd = rlines[i+1][1:]
-                        wx.CallAfter(pub.sendMessage, "doCmd", cmd=cmd)
-                except:
-                    print("rlines=", rlines)
+                if b"GET" in rlines:
+                    i = rlines.index(b"GET")
+                    try:
+                        if len(rlines) > i:
+                            cmd = rlines[i+1][1:].decode()
+                            wx.CallAfter(pub.sendMessage, "doCmd", cmd=cmd)
+                    except Exception as e:
+                        print("rlines=", rlines, "Exception:", e)
 
             except socket.error as msg:
-                print("Socket error: %s" % msg)
+                if self.running:  # Check if the socket error is due to stopping the thread
+                    print("Socket error: %s" % msg)
                 break
 
         self.socket.close()
 
+    def stop(self):
+        self.running = False
+        # Connect to the socket to unblock the accept call
+        try:
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("127.0.0.1", 8080))
+        except Exception as e:
+            print("Error connecting to socket to unblock: ", e)
 
 ###############################################################################
 # GUI SECTION
@@ -1948,7 +1955,8 @@ class PVSimFrame(wx.Frame):
 
         self.SavePrefs()
         if isMac:
-            self.ipc.socket.close()
+            self.ipc.stop()
+            self.ipc.join()  # Wait for the thread to finish
         self.Destroy()     # just exit from App so cProfile may complete
         if not self.mpPool is None:
             # terminate the processes
@@ -1967,7 +1975,7 @@ class PVSimApp(wx.App):
         psimFile = None
         if not (len(sys.argv) == 2 and sys.argv[1][:4] == "-psn"):
             # *** UNUSED ***
-            print("args=", sys.argv)
+            ##print("args=", sys.argv)
             ##parser = OptionParser()
             ##(cmdLineOpts, remainder) = parser.parse_args()
             if len(sys.argv) == 2:
