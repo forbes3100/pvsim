@@ -1840,7 +1840,7 @@ class PVSimFrame(wx.Frame):
             print(f"{editor=}")
             if editor != "":
                 cmd = (
-                    f'osascript -e \'tell application "{editor}"\n'
+                    f'tell application "{editor}"\n'
                     f'  open "{p.proj_dir}{sig.src_file}"\n'
                     f'  find "{name}" searching in characters {sig.src_pos} thru'
                     f' {sig.src_pos+len(name)+2} of document "{win_name}" options {{case'
@@ -1849,10 +1849,15 @@ class PVSimFrame(wx.Frame):
                     f"    select found object of result\n"
                     f'    activate window "{win_name}"\n'
                     "  end if\n"
-                    "end tell'"
+                    "end tell"
                 )
                 print(cmd)
-                os.system(cmd)
+                result = subprocess.run(["osascript", "-e", cmd], capture_output=True, text=True)
+                ##print(f"stdout='{result.stdout}'\n stderr='{result.stderr}'")
+                if "execution error" in result.stderr:
+                    msg = result.stderr.split('got an error:')[-1].strip()
+                    first, last = [int(x) for x in result.stderr.split(':')[0:2]]
+                    print(f"\n{cmd[first:last]}\n^\n{editor} error: {msg}")
             else:
                 print("External editor BBEdit not found")
 
