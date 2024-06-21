@@ -76,32 +76,29 @@ static PyObject* pvsim_SetCallbacks(PyObject* self, PyObject* args)
     PyObject* displayFnTemp;
     PyObject* readFileFnTemp;
 
-    if (PyArg_ParseTuple(args, "OO:SetCallbacks",
+    if (!PyArg_ParseTuple(args, "OO:SetCallbacks",
                           &displayFnTemp, &readFileFnTemp))
     {
-        if (!PyCallable_Check(displayFnTemp))
-        {
-            PyErr_SetString(PyExc_TypeError, "displayFn must be callable");
-            return NULL;
-        }
-        if (!PyCallable_Check(readFileFnTemp))
-        {
-            PyErr_SetString(PyExc_TypeError, "readFileFn must be callable");
-            return NULL;
-        }
-
-        Py_XINCREF(displayFnTemp);
-        Py_XDECREF(displayFn);
-        displayFn = displayFnTemp;
-
-        Py_XINCREF(readFileFnTemp);
-        Py_XDECREF(readFileFn);
-        readFileFn = readFileFnTemp;
-
-        Py_INCREF(Py_None);
-        result = Py_None;
+        return NULL;  // Return NULL to indicate parsing error
     }
-    return result;
+
+    if (!PyCallable_Check(displayFnTemp) || !PyCallable_Check(readFileFnTemp))
+    {
+        PyErr_SetString(PyExc_TypeError, "expected callable objects");
+        return NULL;
+    }
+
+    Py_XINCREF(displayFnTemp);
+    Py_XDECREF(displayFn);
+    displayFn = displayFnTemp;
+
+    Py_XINCREF(readFileFnTemp);
+    Py_XDECREF(readFileFn);
+    readFileFn = readFileFnTemp;
+
+    Py_INCREF(Py_None);
+
+    Py_RETURN_NONE;
 }
 
 //-----------------------------------------------------------------------------
@@ -109,25 +106,24 @@ static PyObject* pvsim_SetCallbacks(PyObject* self, PyObject* args)
 
 static PyObject* pvsim_SetSignalType(PyObject* self, PyObject* args)
 {
-    PyObject* result = NULL;
     PyObject* signalTypeTemp;
 
-    if (PyArg_ParseTuple(args, "O:SetSignalType", &signalTypeTemp))
+    if (!PyArg_ParseTuple(args, "O", &signalTypeTemp))
     {
-        if (!PyType_Check(signalTypeTemp))
-        {
-            PyErr_SetString(PyExc_TypeError, "expected 'Signal' class");
-            return NULL;
-        }
-
-        Py_XINCREF(signalTypeTemp);
-        Py_XDECREF(gPySignalClass);
-        gPySignalClass = signalTypeTemp;
-
-        Py_INCREF(Py_None);
-        result = Py_None;
+        return NULL;  // Return NULL to indicate parsing error
     }
-    return result;
+
+    if (!PyType_Check(signalTypeTemp))
+    {
+        PyErr_SetString(PyExc_TypeError, "expected 'Signal' class");
+        return NULL;
+    }
+
+    Py_XINCREF(signalTypeTemp);
+    Py_XDECREF(gPySignalClass);
+    gPySignalClass = signalTypeTemp;
+
+    Py_RETURN_NONE;
 }
 
 //-----------------------------------------------------------------------------
@@ -192,6 +188,8 @@ void newSignalPy(Signal* signal, Level newLevel, bool isBus,
     {
         // sig.isDisplayed = False
         PyObject* isDisp = PyObject_GetAttrString(sig, "isDisplayed");
+        if (isDisp == NULL)
+            throw new VError(verr_bug, "Signal.isDisplayed is missing");
         Py_DECREF(isDisp);
         isDisp = Py_False;
         Py_INCREF(isDisp);
