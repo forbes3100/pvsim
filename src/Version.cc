@@ -24,5 +24,5 @@
 #endif
 #include "PSignal.h"
 
-const char*     gPSVersion = "6.2.2b2";
+const char*     gPSVersion = "6.3.0";
 const char*     gPSDate = __DATE__ "  " __TIME__;
