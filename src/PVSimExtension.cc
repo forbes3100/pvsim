@@ -572,20 +572,38 @@ static PyObject* pvsim_Simulate(PyObject* self, PyObject* args)
 //-----------------------------------------------------------------------------
 // Initialize back end and set operating modes.
 
+const char* pvsim_Init_docstring =
+"Init(debugLevel=0, quietMode=0, tagDebug=0)\n"
+"Initialize the back end.\n"
+"\n"
+"Parameters\n"
+"----------\n"
+"debugLevel : int, optional\n"
+"      0   none (default)\n"
+"      1   include internal signals in timing window\n"
+"      2   also log instantiations\n"
+"      3   also log generated PCode\n"
+"      4   also log compiled expressions in Forth-like syntax\n"
+"quietMode : int, optional\n"
+"    Quiet mode flag (default is 0).\n"
+"tagDebug : int, optional\n"
+"    Tag debug flag (default is 0).\n";
+
 static PyObject* pvsim_Init(PyObject* self, PyObject* args)
 {
-    // debug levels:
-    //      1   include internal signals in timing window
-    //      2   also log instantiations
-    //      3   also log generated PCode
-    //      4   also log compiled expressions in Forth-like syntax
-    VL::debugLevel = 0;
-    gQuietMode = FALSE;
-    gTagDebug = FALSE;
-    if (!PyArg_ParseTuple(args, "|iii", &debugLevel, &gQuietMode, &gTagDebug))
+    int debugLevel = 0;
+    int quietMode = 0;
+    int tagDebug = 0;
+
+    if (!PyArg_ParseTuple(args, "|iii", &debugLevel, &quietMode, &tagDebug))
     {
         return NULL;
     }
+
+    // assign the parsed values to global variables
+    VL::debugLevel = debugLevel;
+    gQuietMode = quietMode;
+    gTagDebug = tagDebug;
 
     // initialization
     gDP = gDPEnd = 0;                   // init memory space
@@ -634,7 +652,7 @@ static PyObject* pvsim_GetVersion(PyObject* self, PyObject* args)
 //-----------------------------------------------------------------------------
 
 static PyMethodDef PVSimMethods[] = {
-    {"Init",  pvsim_Init, METH_VARARGS, "Initialize back end."},
+    {"Init",  pvsim_Init, METH_VARARGS, pvsim_Init_docstring},
     {"GetVersion",  pvsim_GetVersion, METH_VARARGS, "Get version string."},
     {"SetCallbacks",  pvsim_SetCallbacks, METH_VARARGS,
                                                 "Set callback functions."},
