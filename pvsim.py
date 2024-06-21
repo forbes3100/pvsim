@@ -33,7 +33,7 @@ import wx.lib.dialogs as dialogs
 import wx.aui
 from wx.lib.wordwrap import wordwrap
 import locale
-##import subprocess as sb
+import subprocess
 import unittest
 ##_ = wx.GetTranslation
 from optparse import OptionParser
@@ -1530,10 +1530,13 @@ class PVSimFrame(wx.Frame):
     def DoEditorCmd(self, cmd):
         print("Doing editor command", cmd)
         if cmd == "find":
-            # Get selected text from TextWrangler editor
-            w, r = os.popen2(["osascript", "-e", "return text of selection of "
-                             "application \"TextWrangler\" as string"])
-            name = r.read().strip()
+            # Get selected text from BBEdit editor
+            result = subprocess.run(
+                ['osascript', '-e', 'return text of selection of application "BBEdit" as string'],
+                capture_output=True,
+                text=True
+            )
+            name = result.stdout.strip()
             print("Find signal", name)
             self.timingP.Find(name, 0, True)
 
@@ -1898,21 +1901,32 @@ class PVSimFrame(wx.Frame):
                 winName = sig.srcFile.split("/")[-1]
                 print (name, sig.srcPos, sig.srcPos+len(name)+2,
                      sig.srcFile, winName)
-                # Select word using TextWrangler editor
+                # Select word using BBEdit editor
                 # (would like to also update Find's search string, but
                 #  that property is read-only)
-                os.system("osascript -e 'tell application \"TextWrangler\"\n" \
-                    "  open \"%s%s\"\n" \
-                    "  find \"%s\" searching in characters %d thru %d" \
-                    "   of document \"%s\" options {case sensitive:true," \
-                    "   match words:true}\n" \
-                    "  if found of result then\n" \
-                    "    select found object of result\n" \
-                    "    activate window \"%s\"\n" \
-                    "  end if\n" \
-                    "end tell'" % \
-                    (p.projDir, sig.srcFile, name, sig.srcPos,
-                     sig.srcPos+len(name)+2, winName, winName))
+                result = subprocess.run(
+                    ['osascript', '-e', 'tell application "Finder" to get '
+                        'application id "com.barebones.bbedit"'],
+                    capture_output=True,
+                    text=True
+                )
+                editor = result.stdout.strip()
+                print(f"{editor=}")
+                if editor != '':
+                    os.system("osascript -e 'tell application \"%s\"\n" \
+                        "  open \"%s%s\"\n" \
+                        "  find \"%s\" searching in characters %d thru %d" \
+                        "   of document \"%s\" options {case sensitive:true," \
+                        "   match words:true}\n" \
+                        "  if found of result then\n" \
+                        "    select found object of result\n" \
+                        "    activate window \"%s\"\n" \
+                        "  end if\n" \
+                        "end tell'" % \
+                        (editor, p.projDir, sig.srcFile, name, sig.srcPos,
+                         sig.srcPos+len(name)+2, winName, winName))
+                else:
+                    print("External editor BBEdit not found")
 
     #--------------------------------------------------------------------------
     # Return a dictionary of a pane's settings.
