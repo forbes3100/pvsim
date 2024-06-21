@@ -1304,9 +1304,9 @@ class PVSimFrame(wx.Frame):
             (wx.aui.AuiPaneInfo().CenterPane().BestSize(p.get("timing_size", (898, 600)))),
         )
 
-        # redirect all output to a log file
+        # redirect all output to a log file (if not already in a terminal)
         self.root_name = "pvsim"
-        if 1:
+        if not (sys.stdin and sys.stdin.isatty()):
             self.orig_stdout = sys.stdout
             self.orig_stderr = sys.stderr
             log_path = (
@@ -1906,23 +1906,7 @@ class PVSimApp(wx.App):
     """PVSim application."""
 
     def OnInit(self):
-        print("OnInit")
-        psim_file = None
-        if not (len(sys.argv) == 2 and sys.argv[1][:4] == "-psn"):
-            # *** UNUSED ***
-            print("args=", sys.argv)
-            ##parser = OptionParser()
-            ##(cmdLineOpts, remainder) = parser.parse_args()
-            if len(sys.argv) == 2:
-                psim_file = os.path.abspath(sys.argv[1])
-
         self.frame = frame = PVSimFrame(None)
-        ##if psim_file and os.path.splitext(psim_file)[1] == ".psim":
-        ##    # *** UNUSED ***
-        ##    print("PVSimApp: running", psim_file)
-        ##    frame.OpenFile(psim_file)
-        ##    frame.RunSimulation()
-        print("OnInit end")
         return True
 
 
