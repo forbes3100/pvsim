@@ -28,7 +28,7 @@ OS_MAJOR_VERSION = $(shell sw_vers -productVersion | cut -d. -f1)
 ABI_TAG = 0
 ARCH = $(shell uname -m)
 
-WHEEL_FILE = dist/pvsimu-$(VERS)-$(PYTHON_VERSION)-$(PYTHON_VERSION)-$(OS_NAME)_$(OS_MAJOR_VERSION)_$(ABI_TAG)_$(ARCH).whl
+PVSIMU_WHEEL = dist/pvsimu-$(VERS)-$(PYTHON_VERSION)-$(PYTHON_VERSION)-$(OS_NAME)_$(OS_MAJOR_VERSION)_$(ABI_TAG)_$(ARCH).whl
 
 info_check:
 	echo $(PYTHON_VERSION)
@@ -36,7 +36,7 @@ info_check:
 	echo $(OS_MAJOR_VERSION)
 	echo $(ABI_TAG)
 	echo $(ARCH)
-	echo $(WHEEL_FILE)
+	echo $(PVSIMU_WHEEL)
 
 FORCE:
 
@@ -62,12 +62,13 @@ PVSim_Dev.app/Contents/MacOS/python:
 	ln -s `which $(PYTHON)` PVSim_Dev.app/Contents/MacOS/python
 
 # backend, as a Python extension
-$(WHEEL_FILE): setup_ext.py
+$(PVSIMU_WHEEL): setup_ext.py src/*.cc src/*.h
+	$(PYTHON) -m pip uninstall -y pvsimu
 	$(PYTHON) setup_ext.py bdist_wheel
-	$(PYTHON) -m pip install dist/pvsimu-*.whl
+	$(PYTHON) -m pip install $(PVSIMU_WHEEL)
 
 # OSX binary distribution: PVSim.app
-dist/PVSim.app: $(WHEEL_FILE) setup.py
+dist/PVSim.app: $(PVSIMU_WHEEL) setup.py
 	/bin/rm -rf dist/PVSim.app
 	$(PYTHON) setup.py py2app
 
