@@ -45,7 +45,7 @@ from multiprocessing import managers
 
 import pvsimu
 
-guiVersion = "6.2.2b1"
+guiVersion = "6.2.2b2"
 
 showProfile = 0
 dispMargin = 0
