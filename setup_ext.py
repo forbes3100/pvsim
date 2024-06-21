@@ -1,13 +1,12 @@
 import setuptools
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-mainscript = "pvsim.py"
-
-# grab version from source
+# grab extension version from source
 version = "None"
-for line in open(mainscript).readlines():
-    if line.startswith("__version__ ="):
-        version = line.split("=")[1].strip().replace('"', '')
+for line in open("src/Version.cc").readlines():
+    if "ersion =" in line:
+        version = line.split("=")[1].strip().replace('"', '').replace(';', '')
+        break
 
 ext_modules = [
     Pybind11Extension(
