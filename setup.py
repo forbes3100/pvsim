@@ -10,16 +10,13 @@ Usage (Mac OS X):
 import sys
 from setuptools import setup
 
+import pvsim
+
 mainscript = "pvsim.py"
 
 # grab version and copyright info from source
-version = "None"
-copyright = "None"
-for line in open(mainscript).readlines():
-    if line.startswith("__copyright__"):
-        copyright = line.split("=")[1].strip().replace('"', '')
-    elif line.startswith("__version__ ="):
-        version = line.split("=")[1].strip().replace('"', '')
+version = pvsim.__version__
+copyright = pvsim.__copyright__
 
 # Define dependencies
 dependencies = ["wxPython", "pypubsub", "pvsimu"]
