@@ -45,6 +45,7 @@
 		D269DE031636CB9A00D01308 /* VLCompiler.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDF91636CB9A00D01308 /* VLCompiler.h */; };
 		D269DE041636CB9A00D01308 /* VLSysLib.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDFA1636CB9A00D01308 /* VLSysLib.h */; };
 		D269DE0B1636CC7300D01308 /* PSignal.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DE0A1636CC7300D01308 /* PSignal.h */; };
+		D26ACF9D2C245D2600B20D45 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = D26ACF9C2C245D2600B20D45 /* Makefile */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -91,6 +92,7 @@
 		D269DDF91636CB9A00D01308 /* VLCompiler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VLCompiler.h; sourceTree = "<group>"; };
 		D269DDFA1636CB9A00D01308 /* VLSysLib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VLSysLib.h; sourceTree = "<group>"; };
 		D269DE0A1636CC7300D01308 /* PSignal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSignal.h; sourceTree = "<group>"; };
+		D26ACF9C2C245D2600B20D45 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		D27C2D7F2BE0292F0034BE0F /* TODO */ = {isa = PBXFileReference; lastKnownFileType = text; path = TODO; sourceTree = "<group>"; };
 		D27C2D802BE0292F0034BE0F /* pvsim.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = pvsim.py; sourceTree = "<group>"; };
 		D27C2D812BE0292F0034BE0F /* README.rst.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.rst.txt; sourceTree = "<group>"; };
@@ -130,6 +132,7 @@
 		D250B7E02BE069C300E5915B /* src */ = {
 			isa = PBXGroup;
 			children = (
+				D26ACF9C2C245D2600B20D45 /* Makefile */,
 				D269DDAF1636614200D01308 /* EvalSignal.cc */,
 				D269DDB11636614200D01308 /* ModelPCode.cc */,
 				D269DDF11636CB9900D01308 /* Model.h */,
@@ -286,6 +289,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D26ACF9D2C245D2600B20D45 /* Makefile in Sources */,
 				D269DDBE1636614300D01308 /* EvalSignal.cc in Sources */,
 				D269DDC01636614300D01308 /* ModelPCode.cc in Sources */,
 				D269DDC11636614300D01308 /* PVSimMain.cc in Sources */,
