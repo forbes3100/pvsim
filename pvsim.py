@@ -181,14 +181,14 @@ def mp_worker(args):
         return None
     proj = os.path.join(proj_dir, proj_name)
     print_mp(40 * "-" + "\n")
-    print_mp("Run: cd %s\n" % proj_dir)
+    print_mp(f"Run: cd {proj_dir}\n")
     os.chdir(proj_dir)
 
     error_count = 0
 
     # use Python-extension pvsimu
     if test:
-        print_mp("\n======= Test %s =======\n\n" % test)
+        print_mp(f"\n======= Test {test} =======\n\n")
     pvsimu.Init()
     pvsimu.SetSignalType(Signal)
     pvsimu.SetCallbacks(print_mp, print_mp)
@@ -267,7 +267,7 @@ class Prefs(object):
                     value = repr(value)
                 ##print("save pref:", name, value, type(value))
                 if not self._config.Write(name, value):
-                    raise IOError("Prefs.Write(%s, %s)" % (name, value))
+                    raise IOError(f"Prefs.Write({name}, {value})")
         self._config.Flush()
 
     def config(self):
@@ -325,7 +325,7 @@ class IPCThread(threading.Thread):
 
             except socket.error as msg:
                 if self.running:  # Check if the socket error is due to stopping the thread
-                    print("Socket error: %s" % msg)
+                    print(f"Socket error: {msg}")
                 break
 
         self.socket.close()
@@ -583,7 +583,7 @@ class TimingPane(wx.ScrolledWindow):
             # include bus-value text if there's room for it
             n_bits = abs(sig.l_sub - sig.r_sub) + 1
             if show_text and isinstance(v_prev, int):
-                value_name = "%0*X" % ((n_bits + 2) // 4, v_prev)
+                value_name = f"{v_prev:0{(n_bits + 2) // 4}X}"
                 (w, h) = dc.GetTextExtent(value_name)
                 if x - w - 2 > x_prev:
                     dxp = min((x - x_prev) // 2, 100)
@@ -724,7 +724,7 @@ class TimingPane(wx.ScrolledWindow):
                     if x > x_end:
                         break
                     if x > x_begin and x > x_prev + 4 and v == "H":
-                        bar_name = "%g" % (t / tick_ns)
+                        bar_name = f"{t / tick_ns:g}"
                         if show_text:
                             (w, h) = dc.GetTextExtent(bar_name)
                             if x - w // 2 - 5 > x_text:
@@ -744,7 +744,7 @@ class TimingPane(wx.ScrolledWindow):
                     if x > x_end:
                         break
                     if x > x_begin:
-                        bar_name = "%g" % (t / tick_ns)
+                        bar_name = f"{t / tick_ns:g}"
                         (w, h) = dc.GetTextExtent(bar_name)
                         if x - w - 5 > x_text:
                             dc.SetTextForeground(dkblue)
@@ -760,7 +760,7 @@ class TimingPane(wx.ScrolledWindow):
             for sig in self.disp_sigs[i:]:
                 self.y_low = y_low
                 if 0 and sig.is_bus:
-                    name = "%s[%d:%d]" % (sig.name, sig.l_sub, sig.r_sub)
+                    name = f"{sig.name}[{sig.l_sub}:{sig.r_sub}]"
                 else:
                     name = sig.name
                 if show_text:
@@ -879,11 +879,11 @@ class TimingPane(wx.ScrolledWindow):
             if self.ti_cursors_start:
                 t_mouse = self.ti_cursors_start[0]
         if t_mouse:
-            s = locale._format("%%3.%df" % tick_places, float(t_mouse) / tick_ns, grouping=True)
+            s = locale._format(f"%3.{tick_places}f", float(t_mouse) / tick_ns, grouping=True)
             if self.t_time_cursor:
                 dc.DrawText(s, x0 + 1, y0 + 2 - baseline)
             else:
-                dc.DrawText("%s ns" % s, x0 + 10, y0 + 2 - baseline)
+                dc.DrawText(f"{s} ns", x0 + 10, y0 + 2 - baseline)
         if self.ti_cursors_start:
             dc.SetBrush(wx.Brush(wx.Colour(255, 255, 0, 64)))
             dc.SetPen(wx.Pen(wx.Colour(255, 255, 0, 64)))
@@ -901,7 +901,7 @@ class TimingPane(wx.ScrolledWindow):
                     xm, xm0 = xm0, xm
                 dc.DrawRectangle(xm0, y0, xm - xm0, y_end - y0)
                 dt = float(abs(self.t_time_cursor - tm0)) / tick_ns
-                s = locale._format("%%3.%df" % tick_places, dt, grouping=True)
+                s = locale._format(f"%3.{tick_places}f", dt, grouping=True)
                 dc.DrawText(f"\u0394{s} ns", x0 + 65, y0 + 2 - baseline)
 
         if xy_edge_highlight:
@@ -911,7 +911,7 @@ class TimingPane(wx.ScrolledWindow):
             dc.SetPen(wx.Pen(blue))
             dc.DrawRectangle(x - 3, y - 3, 6, 6)
 
-        ##print("%3.3f: OnPaint() end" % (time.perf_counter() - t0))
+        ##print(f"{time.perf_counter() - t0:3.3f}: OnPaint() end")
 
     def OnLeftDown(self, event):
         """Left mouse button pressed: start a cursor drag-select."""
@@ -1086,7 +1086,7 @@ class TimingPane(wx.ScrolledWindow):
                     self.ti_cursors_start = None, i0 + 1
                     break
         else:
-            ##print("'%s' not found." % find_string)
+            ##print(f"'{find_string}' not found.")
             wx.Bell()
             self.i_name_cursor = 0
             self.ti_cursors_start = None, 0
@@ -1322,7 +1322,7 @@ class PVSimFrame(wx.Frame):
             cur_locale = locale.setlocale(locale.LC_ALL, "en_US")
         if 1:
             print("Python:", sys.version)
-            print("%d-bit Python" % (len(bin(sys.maxsize)) - 1))
+            print(f"{(len(bin(sys.maxsize)) - 1)}-bit Python")
             print("wxPython:", wx.version())
             print("env LANG=", os.getenv("LANG"))
             print("Locale:", cur_locale)
@@ -1754,9 +1754,9 @@ class PVSimFrame(wx.Frame):
         ##print("OnMPResult: error_count=", error_count)
 
         if error_count == 0:
-            print("%2.1f: Simulation done, no errors.\n" % (time.perf_counter() - t0))
+            print(f"{time.perf_counter() - t0:2.1f}: Simulation done, no errors.\n")
             proj = os.path.join(p.proj_dir, p.proj_name)
-            self.read_order_file("%s.order" % proj)
+            self.read_order_file(f"{proj}.order")
 
         # draw final test's results in timing pane
         self.timing_panel.AdjustMyScrollbars()
@@ -1851,7 +1851,7 @@ class PVSimFrame(wx.Frame):
                     "  end if\n"
                     "end tell'"
                 )
-                ##print(cmd)
+                print(cmd)
                 os.system(cmd)
             else:
                 print("External editor BBEdit not found")
