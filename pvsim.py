@@ -1,33 +1,12 @@
-#!/usr/bin/env python3.10
+#!/usr/bin/env python
 
-###############################################################################
-#
-#                   PVSim Verilog Simulator GUI, in wxPython
-#
-# Copyright 2012 Scott Forbes
-#
-# This file is part of PVSim.
-#
-license = """
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-# 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with PVSim; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-"""
-###############################################################################
+"""PVSim Verilog Simulator GUI, in wxPython."""
 
-import sys
-##print("Python:", sys.version)
-import os, time, re, string, traceback, threading, cProfile, shutil
+__copyright__ = "Copyright 2012, Scott Forbes"
+__license__ = "GPL"
+__version__ = "6.3.0"
+
+import sys, os, time, re, string, traceback, threading, cProfile, shutil
 import wx
 import wx.lib.dialogs as dialogs
 import wx.aui
@@ -35,64 +14,60 @@ from wx.lib.wordwrap import wordwrap
 import locale
 import subprocess
 import unittest
-##_ = wx.GetTranslation
 from optparse import OptionParser
 import socket
 from pubsub import pub
-
 import multiprocessing as mp
 from multiprocessing import managers
 
 import pvsimu
 
-guiVersion = "6.2.2b2"
+show_profile = 0
+disp_margin = 0
+show_text = 1
+use_snap = 0  # enable snap-cursor-to-edge (slows down highlighting though)
+use_multiprocessing = 0
 
-showProfile = 0
-dispMargin = 0
-showText = 1
-useSnap = 0     # enable snap-cursor-to-edge (slows down highlighting though)
-useMultiprocessing = 0
+backend_msg_buff_len = 20
+##backend_msg_buff_len = 1
 
-backendMsgBuffLen = 20
-##backendMsgBuffLen = 1
-
-##logFile = None
 t0 = time.perf_counter()
 
-isWin   = (sys.platform == "win32")
-isLinux = (sys.platform == "linux2")
-isMac = not (isWin or isLinux)
+is_win = sys.platform == "win32"
+is_linux = sys.platform == "linux2"
+is_mac = not (is_win or is_linux)
 
 # Not yet for Windows
-if isWin:
-    useMultiprocessing = 0
+if is_win:
+    use_multiprocessing = 0
 
 # standard font pointsize-- will be changed to calbrated size for this system
-fontSize = 11
+font_size = 11
 
-#==============================================================================
-# Return the full path of a given executable.
 
 def which(pgm):
+    """Return the full path of a given executable."""
     for p in os.getenv("PATH").split(os.path.pathsep):
         p = os.path.join(p, pgm)
         if os.path.exists(p) and os.access(p, os.X_OK):
             return p
     return None
 
+
 def pairwise(iterable):
     "s -> (s0,s1), (s2,s3), (s4, s5), ..."
     a = iter(iterable)
     return zip(a, a)
 
-#==============================================================================
+
 # Worker thread-- runs tells backend pvsimu to run simulation and gets results.
 
 # notification event for thread completion
 EVT_RESULT_ID = wx.NewIdRef()
-mainFrame = None
-msgCount = 0
-errCount = 0
+main_frame = None
+message_count = 0
+error_count = 0
+
 
 class ResultEvent(wx.PyEvent):
     def __init__(self, msg):
@@ -100,22 +75,20 @@ class ResultEvent(wx.PyEvent):
         self.SetEventType(EVT_RESULT_ID)
         self.msg = msg
 
-#------------------------------------------------------------------------------
-# Write a message the GUI thread's log window and log file. No newline on end.
 
-def printBE(msg):
-    global mainFrame, msgCount, errCount
-    wx.PostEvent(mainFrame, ResultEvent(msg))
+def print_backend(msg):
+    """Write a message the GUI thread's log window and log file. No newline on end."""
+    global main_frame, message_count, error_count
+    wx.PostEvent(main_frame, ResultEvent(msg))
     if msg.find("*** ERROR") >= 0:
-        errCount += 1
+        error_count += 1
     # Allow GUI thread a chance to display queued lines every so often. Need a
     # better method: should print when this thread is waiting on Simulate().
-    msgCount += 1
-    if (msgCount % backendMsgBuffLen) == 0:
+    message_count += 1
+    if (message_count % backend_msg_buff_len) == 0:
         ##time.sleep(0.01)
-        time.sleep(0.1)     # must be this long to pause (why???)
+        time.sleep(0.1)  # must be this long to pause (why???)
 
-#------------------------------------------------------------------------------
 
 class SimThread(threading.Thread):
     def __init__(self, frame):
@@ -124,138 +97,132 @@ class SimThread(threading.Thread):
         self.start()
 
     def run(self):
-        global mainFrame, errCount
-        frame = mainFrame = self.frame
+        global main_frame, error_count
+        frame = main_frame = self.frame
         p = frame.p
-        if not p.projDir:
-            printBE("*** No project specified ***")
+        if not p.proj_dir:
+            print_backend("*** No project specified ***")
             wx.PostEvent(frame, ResultEvent(None))
             return
-        proj = os.path.join(p.projDir, p.projName)
-        printBE(40*"-"+"\n")
-        printBE("Run: cd %s\n" % p.projDir)
-        os.chdir(p.projDir)
+        proj = os.path.join(p.proj_dir, p.proj_name)
+        print_backend(40 * "-" + "\n")
+        print_backend(f"Run: cd {p.proj_dir}\n")
+        os.chdir(p.proj_dir)
 
-        errCount = 0
-        if p.testChoice == "All":
-            if len(frame.testChoices) > 1:
-                choices = frame.testChoices[:-1]
+        error_count = 0
+        if p.test_choice == "All":
+            if len(frame.test_choices) > 1:
+                choices = frame.test_choices[:-1]
             else:
                 choices = [None]
         else:
-            choices = [p.testChoice]
+            choices = [p.test_choice]
 
         # use Python-extension pvsimu
-        for testChoice in choices:
+        for test_choice in choices:
             time.sleep(0.1)
-            if testChoice:
-                printBE("\n======= Test %s =======\n\n" % testChoice)
+            if test_choice:
+                print_backend(f"\n======= Test {test_choice} =======\n\n")
             else:
-                testChoice = ""
+                test_choice = ""
             pvsimu.Init()
             pvsimu.SetSignalType(Signal)
-            pvsimu.SetCallbacks(printBE, printBE)
+            pvsimu.SetCallbacks(print_backend, print_backend)
             try:
-                result = pvsimu.Simulate(proj, testChoice)
+                result = pvsimu.Simulate(proj, test_choice)
                 if not result:
-                    printBE("*** ERROR: pvsimu.Simulate() returned NULL\n")
-                    errCount += 1
+                    print_backend("*** ERROR: pvsimu.Simulate() returned NULL\n")
+                    error_count += 1
                     ##break
                 else:
-                    frame.sigs, frame.nTicks, frame.barSignal = result
-                    printBE("nTicks= %d bar=%s\n" %
-                            (frame.nTicks, frame.barSignal))
-                    ##printBE(f"\n{frame.sigs=}\n")
-                    ##printBE(f"\n{frame.sigs[6].events=}\n")
+                    frame.sigs, frame.n_ticks, frame.bar_signal = result
+                    print_backend(f"n_ticks={frame.n_ticks} bar={frame.bar_signal}\n")
+                    ##print_backend(f"\n{frame.sigs=}\n")
+                    ##print_backend(f"\n{frame.sigs[6].events=}\n")
             except:
-                printBE("*** ERROR: pvsimu.Simulate() exception: %s" %
-                        traceback.format_exc())
+                print_backend(f"*** ERROR: pvsimu.Simulate() exception: {traceback.format_exc()}")
                 ##break
-            printBE(40*"-"+"\n")
+            print_backend(40 * "-" + "\n")
 
-        if errCount == 0:
-            printBE("%2.1f: Simulation done, no errors.\n" % \
-                (time.perf_counter() - t0))
-            frame.ReadOrderFile("%s.order" % proj)
+        if error_count == 0:
+            print_backend(f"{(time.perf_counter() - t0):2.1f}: Simulation done, no errors.\n")
+            frame.read_order_file(f"{proj}.order")
 
         wx.PostEvent(frame, ResultEvent(None))
 
-#==============================================================================
+
 # Multiprocessing version of simulator-worker process.
 
-logName = None      # a process's local copy of its name
-logQueue = None     # a process's local copy of mpLogQueue
+log_name = None  # a process's local copy of its name
+log_queue = None  # a process's local copy of mp_log_queue
 
-#------------------------------------------------------------------------------
-# Write a message the GUI thread's log window and log file. No newline on end.
 
-def printMP(msg):
-    global logName, logQueue, errCount
-    ##print("printMP:", msg)
-    logQueue.put((logName, msg))
+def print_mp(msg):
+    """Write a message the GUI thread's log window and log file. No newline on end."""
+    global log_name, log_queue, error_count
+    ##print("print_mp:", msg)
+    log_queue.put((log_name, msg))
     if msg.find("*** ERROR") >= 0:
-        errCount += 1
+        error_count += 1
 
-#------------------------------------------------------------------------------
-# Multiprocessing worker: run a single simulation test in its own process.
-# Has no contact with GUI process except for logQueue via printMP(), and
-# returned result.
 
-def mpWorker(args):
-    (projDir, projName, nTicks, barSignal, q, test, isFinalTest) = args
-    global logName, logQueue, errCount
-    logName = test
-    logQueue = q
-    if not projDir:
-        printMP("*** No project specified ***")
+def mp_worker(args):
+    """Multiprocessing worker: run a single simulation test in its own process.
+    Has no contact with GUI process except for log_queue via print_mp(), and
+    returned result.
+    """
+    (proj_dir, proj_name, n_ticks, bar_signal, q, test, is_final_test) = args
+    global log_name, log_queue, error_count
+    log_name = test
+    log_queue = q
+    if not proj_dir:
+        print_mp("*** No project specified ***")
         ##wx.PostEvent(frame, ResultEvent(None))
         return None
-    proj = os.path.join(projDir, projName)
-    printMP(40*"-"+"\n")
-    printMP("Run: cd %s\n" % projDir)
-    os.chdir(projDir)
+    proj = os.path.join(proj_dir, proj_name)
+    print_mp(40 * "-" + "\n")
+    print_mp("Run: cd %s\n" % proj_dir)
+    os.chdir(proj_dir)
 
-    errCount = 0
+    error_count = 0
 
     # use Python-extension pvsimu
     if test:
-        printMP("\n======= Test %s =======\n\n" % test)
+        print_mp("\n======= Test %s =======\n\n" % test)
     pvsimu.Init()
     pvsimu.SetSignalType(Signal)
-    pvsimu.SetCallbacks(printMP, printMP)
+    pvsimu.SetCallbacks(print_mp, print_mp)
     try:
         result = pvsimu.Simulate(proj, test)
         if not result:
-            printMP("*** ERROR: pvsimu.Simulate() returned NULL\n")
-            errCount += 1
+            print_mp("*** ERROR: pvsimu.Simulate() returned NULL\n")
+            error_count += 1
         else:
-            sigs, nTicks, barSignal = result
-            printMP("nTicks= %d bar=%s\n" % (nTicks, barSignal))
-            if isFinalTest:
-                mpWorkerResult = result
+            sigs, n_ticks, bar_signal = result
+            print_mp(f"{n_ticks=} {bar_signal=}\n")
+            if is_final_test:
+                mp_worker_result = result
     except:
-        printMP("*** ERROR: pvsimu.Simulate() exception\n")
-    printMP(40*"-"+"\n")
+        print_mp("*** ERROR: pvsimu.Simulate() exception\n")
+    print_mp(40 * "-" + "\n")
 
-    return (None, (sigs, nTicks, barSignal, errCount))[isFinalTest]
+    return (None, (sigs, n_ticks, bar_signal, error_count))[is_final_test]
 
-#------------------------------------------------------------------------------
-# Multiprocessing-worker completion callback, given list of all processes'
-# results. Executes in GUI thread.
 
-def mpWorkerDone(results):
-    global mainFrame, errCount
-    print("mpWorkerDone: len(results)=", len(results))
+def mp_worker_done(results):
+    """Multiprocessing-worker completion callback, given list of all processes' results.
+    Executes in GUI thread.
+    """
+    global main_frame, error_count
+    print(f"mp_worker_done: {len(results)=}")
     if results != None:
-        mainFrame.sigs, mainFrame.nTicks, mainFrame.barSignal, \
-                errCount = results[-1]
-        mainFrame.OnMPResult()
+        main_frame.sigs, main_frame.n_ticks, main_frame.bar_signal, error_count = results[-1]
+        main_frame.OnMPResult()
 
-
-#==============================================================================
-# A preferences (config) file or registry entry.
 
 class Prefs(object):
+    """A preferences (config) file or registry entry."""
+
     def __init__(self):
         self._config = config = wx.Config("PVSim")
 
@@ -264,43 +231,37 @@ class Prefs(object):
             # put entries into this Prefs object as attributes
             # (except for FileHistory entries-- those are handed separately)
             if not (len(name) == 5 and name[:4] == "file"):
-                self._setAttr(name, config.Read(name))
+                self._set_attr(name, config.Read(name))
             valid, name, index = config.GetNextEntry(index)
 
-    #--------------------------------------------------------------------------
-    # Set a value as a named attribute.
-
-    def _setAttr(self, name, value):
-        ##print("Prefs _setAttr(", name, ",", value, ")")
+    def _set_attr(self, name, value):
+        """Set a value as a named attribute."""
+        ##print(f"Prefs _set_attr({name=}, {value=})")
         try:
             value = eval(value)
         except:
             pass
         setattr(self, name, value)
 
-    #--------------------------------------------------------------------------
-    # Get a preference value, possibly using the default.
-
-    def get(self, name, defaultValue):
+    def get(self, name, default_value):
+        """Get a preference value, possibly using the default."""
         if not hasattr(self, name):
-            setattr(self, name, defaultValue)
+            setattr(self, name, default_value)
         value = getattr(self, name)
-        if type(value) != type(defaultValue) and isinstance(value, str):
+        if type(value) != type(default_value) and isinstance(value, str):
             try:
                 value = eval(value)
             except:
                 pass
         return value
 
-    #--------------------------------------------------------------------------
-    # Write all attributes back to file.
-
     def save(self):
+        """Write all attributes back to file."""
         attrs = vars(self)
         names = list(attrs.keys())
         names.sort()
         for name in names:
-            if name[0] != '_':
+            if name[0] != "_":
                 value = attrs[name]
                 if not isinstance(value, str):
                     value = repr(value)
@@ -309,39 +270,34 @@ class Prefs(object):
                     raise IOError("Prefs.Write(%s, %s)" % (name, value))
         self._config.Flush()
 
-    #--------------------------------------------------------------------------
-    # Return Config object.
-
     def config(self):
+        """Return Config object."""
         return self._config
 
-#==============================================================================
-# A simple error-handling class to write exceptions to a text file.
 
 class Logger(object):
-    def __init__(self, name, textCtrl):
-        ##global logFile
-        self.logFile = open(name + ".logwx", "w")
-        self.textCtrl = textCtrl
+    """A simple error-handling class to write exceptions to a text file."""
+
+    def __init__(self, name, text_ctrl):
+        self.log_file = open(name + ".logwx", "w")
+        self.text_ctrl = text_ctrl
 
     def write(self, s):
-        ##global logFile
         try:
-            self.logFile.write(s)
-            ##self.textCtrl.WriteText(s)
+            self.log_file.write(s)
+            ##self.text_ctrl.WriteText(s)
             # thread-safe version
-            wx.CallAfter(self.textCtrl.WriteText, s)
+            wx.CallAfter(self.text_ctrl.WriteText, s)
         except:
-            pass # don't recursively crash on errors
+            pass  # don't recursively crash on errors
 
     def flush(self):
         pass
 
 
-#==============================================================================
-# Inter-Process Communication Thread.
-
 class IPCThread(threading.Thread):
+    """Inter-Process Communication Thread."""
+
     def __init__(self):
         threading.Thread.__init__(self)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -362,7 +318,7 @@ class IPCThread(threading.Thread):
                     i = rlines.index(b"GET")
                     try:
                         if len(rlines) > i:
-                            cmd = rlines[i+1][1:].decode()
+                            cmd = rlines[i + 1][1:].decode()
                             wx.CallAfter(pub.sendMessage, "doCmd", cmd=cmd)
                     except Exception as e:
                         print("rlines=", rlines, "Exception:", e)
@@ -382,6 +338,7 @@ class IPCThread(threading.Thread):
         except Exception as e:
             print("Error connecting to socket to unblock: ", e)
 
+
 ###############################################################################
 # GUI SECTION
 ###############################################################################
@@ -389,46 +346,45 @@ class IPCThread(threading.Thread):
 # Waveform display colors
 
 # colors from old PVSim, adjusted to match on screen
-red     = wx.Colour(255,   0,   0)
-yellow  = wx.Colour(255, 255,   0)
-green   = wx.Colour(  0, 150,   0)
-blue    = wx.Colour(  0,   0, 255)
-ltblue  = wx.Colour( 47, 254, 255)
-dkblue  = wx.Colour( 10,   0, 200)
-dkgray  = wx.Colour(128, 128, 128)
+red = wx.Colour(255, 0, 0)
+yellow = wx.Colour(255, 255, 0)
+green = wx.Colour(0, 150, 0)
+blue = wx.Colour(0, 0, 255)
+ltblue = wx.Colour(47, 254, 255)
+dkblue = wx.Colour(10, 0, 200)
+dkgray = wx.Colour(128, 128, 128)
 
-Level2V = {"L": 0, "Z":0.5, "H":1, "X":2, "S": 0}
-tickPlaces = 3
-ticksNS = 10**tickPlaces
+level_to_voltage = {"L": 0, "Z": 0.5, "H": 1, "X": 2, "S": 0}
+tick_places = 3
+tick_ns = 10**tick_places
 
-#==============================================================================
-# A signal timing display pane.
 
 class TimingPane(wx.ScrolledWindow):
+    """A signal timing display pane."""
+
     def __init__(self, parent, frame):
         self.frame = frame
         p = frame.p
-        wx.ScrolledWindow.__init__(self, parent, -1,
-                                        (dispMargin, dispMargin))
-        self.wavesBitmap = None
-        self.xmax = 0
-        self.ymax = 0
-        self.xsPosLast = None
-        self.ysPosLast = None
-        self.wWinLast = None
-        self.hWinLast = None
-        self.wTickLast = None
-        self.tCenter = None
-        p.wTick = frame.wTick
-        self.haveSPos = False
-        self.xMouse = 0             # screen position of mouse pointer
-        self.yMouse = 0
-        self.mouseDown = False      # True if mouse button down
-        self.mouseWasDown = False   # True if mouse was down previously
-        self.tiCursorsStart = None  # (snapped tick, name index) where mouse
-                                    #   click started, or None
-        self.iNameCursor = None
-        self.tTimeCursor = None     # snapped tick of last mouse down
+        wx.ScrolledWindow.__init__(self, parent, -1, (disp_margin, disp_margin))
+        self.waves_bitmap = None
+        self.x_max = 0
+        self.y_max = 0
+        self.xs_pos_last = None
+        self.ys_pos_last = None
+        self.w_win_last = None
+        self.h_win_last = None
+        self.w_tick_last = None
+        self.t_center = None
+        p.w_tick = frame.w_tick
+        self.have_screen_pos = False
+        self.x_mouse = 0  # screen position of mouse pointer
+        self.y_mouse = 0
+        self.mouse_down = False  # True if mouse button down
+        self.mouse_was_down = False  # True if mouse was down previously
+        # (snapped tick, name index) where mouse click started, or None
+        self.ti_cursors_start = None
+        self.i_name_cursor = None
+        self.t_time_cursor = None  # snapped tick of last mouse down
         self.clip = None
         self.SetDoubleBuffered(True)
         ##self.SetBackgroundColour("WHITE")
@@ -448,206 +404,204 @@ class TimingPane(wx.ScrolledWindow):
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.AdjustMyScrollbars()
 
-    #--------------------------------------------------------------------------
+    def get_width(self):
+        return self.x_max + disp_margin
 
-    def getWidth(self):
-        return self.xmax + dispMargin
+    def get_height(self):
+        return self.y_max + disp_margin
 
-    def getHeight(self):
-        return self.ymax + dispMargin
-
-    #--------------------------------------------------------------------------
-    # Convert horizontal pixel position to time tick.
-
-    def X2T(self, x):
+    def x_pos_to_time_tick(self, x):
+        """Convert horizontal pixel position to time tick."""
         p = self.frame.p
-        xsPos = self.GetScrollPos(wx.HORIZONTAL)
-        t = (x + xsPos * self.wScroll - self.wNames) // p.wTick
+        x_scroll_pos = self.GetScrollPos(wx.HORIZONTAL)
+        t = (x + x_scroll_pos * self.w_scroll - self.w_names) // p.w_tick
         return t
 
-    #--------------------------------------------------------------------------
-    # Convert vertical pixel position to dispSig list index.
-
-    def Y2I(self, y):
-        index = int((y+self.y0) / self.hRow + 0.5) - 1
+    def y_pos_to_index(self, y):
+        """Convert vertical pixel position to dispSig list index."""
+        index = int((y + self.y0) / self.h_row + 0.5) - 1
         return index
 
-    #--------------------------------------------------------------------------
-    # Recompute timing pane dimensions and scrollbar positions.
-    # Sets scrollbars to (p.xsPos,p.ysPos), scrolling image if self.haveSPos
-    # is yet to be set.
-
-    def AdjustMyScrollbars(self, startTick=None, endTick=None):
+    def AdjustMyScrollbars(self, start_tick=None, end_tick=None):
+        """Recompute timing pane dimensions and scrollbar positions.
+        Sets scrollbars to (p.x_scroll_pos,p.y_scroll_pos), scrolling image if self.have_screen_pos
+        is yet to be set.
+        """
         frame = self.frame
         p = frame.p
 
         # rebuild list of displayed signals
-        dispSigs = []
+        disp_sigs = []
         for sig in list(frame.sigs.values()):
             if sig.isDisplayed:
-                dispSigs.append(sig)
-        self.dispSigs = dispSigs
-        nDisp = len(dispSigs)
+                disp_sigs.append(sig)
+        self.disp_sigs = disp_sigs
+        n_disp = len(disp_sigs)
 
         # compute signal row dimensions based on timing pane scale factor
-        s = p.timingScale
+        s = p.timing_scale
         # pixel width of signal names part of diagram
-        self.wNames = wNames = int(100*s)
+        self.w_names = w_names = int(100 * s)
         # signal's row-to-row spacing in display
-        self.hRow = hRow     = int(10*s)
-        ##print("hRow=", hRow)
+        self.h_row = h_row = int(10 * s)
+        ##print(f"{h_row=}")
         # amount to raise up text (pixels)
-        self.textBaseline = (3, 2)[isMac]
+        self.text_baseline = (3, 2)[is_mac]
 
-        # xmax,ymax: timing pane virtual dimensions
-        wWaves = frame.wTick * frame.nTicks
-        self.xmax = xmax = int(wWaves + wNames + 0.5)
-        self.ymax = ymax = (nDisp + 1) * hRow
-        # wScroll: width of one scroll unit
-        self.wScroll = wScroll = 20
-        # xsmax,ysmax: timing pane virtual dimensions in scroll units
-        self.xsmax = xsmax = int(xmax / wScroll + 0.5)
-        self.ysmax = ysmax = int(ymax / hRow + 0.5)
-        # wWin,hWin: timing pane aperture size
-        wWin, hWin = self.GetClientSize()
-        wWin -= dispMargin; hWin -= dispMargin
-        wWavePart = wWin - wNames
+        # x_max,y_max: timing pane virtual dimensions
+        w_waves = frame.w_tick * frame.n_ticks
+        self.x_max = x_max = int(w_waves + w_names + 0.5)
+        self.y_max = y_max = (n_disp + 1) * h_row
+        # w_scroll: width of one scroll unit
+        self.w_scroll = w_scroll = 20
+        # x_scroll_max,y_scroll_max: timing pane virtual dimensions in scroll units
+        self.x_scroll_max = x_scroll_max = int(x_max / w_scroll + 0.5)
+        self.y_scroll_max = y_scroll_max = int(y_max / h_row + 0.5)
+        # w_win,h_win: timing pane aperture size
+        w_win, h_win = self.GetClientSize()
+        w_win -= disp_margin
+        h_win -= disp_margin
+        w_wave_part = w_win - w_names
 
         # if a tick range to view is given, use it
-        xsPosPre = self.GetScrollPos(wx.HORIZONTAL)
-        if startTick:
-            if startTick > endTick:
-                startTick, endTick = endTick, startTick
-            dt = endTick - startTick
-            ##print("wWavePart=", wWavePart)
-            frame.wTick = 0.9 * wWavePart / dt
-            wWaves = frame.wTick * frame.nTicks
-            self.xmax = xmax = int(wWaves + wNames + 0.5)
-            self.xsmax = xsmax = int(xmax / wScroll + 0.5)
-            p.xsPos = int((startTick - 0.05*dt) * frame.wTick / wScroll)
-            p.ysPos = self.GetScrollPos(wx.VERTICAL)
-            self.haveSPos = False
-            p.wTick = None
+        x_scroll_pos_pre = self.GetScrollPos(wx.HORIZONTAL)
+        if start_tick:
+            if start_tick > end_tick:
+                start_tick, end_tick = end_tick, start_tick
+            dt = end_tick - start_tick
+            ##print(f"{w_wave_part=}")
+            frame.w_tick = 0.9 * w_wave_part / dt
+            w_waves = frame.w_tick * frame.n_ticks
+            self.x_max = x_max = int(w_waves + w_names + 0.5)
+            self.x_scroll_max = x_scroll_max = int(x_max / w_scroll + 0.5)
+            p.x_scroll_pos = int((start_tick - 0.05 * dt) * frame.w_tick / w_scroll)
+            p.y_scroll_pos = self.GetScrollPos(wx.VERTICAL)
+            self.have_screen_pos = False
+            p.w_tick = None
 
-        # scroll to (p.xsPos,p.ysPos) if self.haveSPos is yet to be set
-        if not self.haveSPos:
-            self.SetScrollPos(wx.HORIZONTAL, p.get("xsPos", 0))
-            self.SetScrollPos(wx.VERTICAL, p.get("ysPos", 0))
-            ##self.Scroll(p.xsPos, p.ysPos)
-            self.haveSPos = True
+        # scroll to (p.x_scroll_pos,p.y_scroll_pos) if self.have_screen_pos is yet to be set
+        if not self.have_screen_pos:
+            self.SetScrollPos(wx.HORIZONTAL, p.get("x_scroll_pos", 0))
+            self.SetScrollPos(wx.VERTICAL, p.get("y_scroll_pos", 0))
+            ##self.Scroll(p.x_scroll_pos, p.y_scroll_pos)
+            self.have_screen_pos = True
 
-        if p.wTick != frame.wTick:
-            if startTick:
+        if p.w_tick != frame.w_tick:
+            if start_tick:
                 # expanding time to selection: no adjustments
-                xsPos = p.xsPos
-                ysPos = p.ysPos
+                x_scroll_pos = p.x_scroll_pos
+                y_scroll_pos = p.y_scroll_pos
             else:
                 # have zoomed: keep center tick centered
                 # determine center tick before changing zoom
-                xsPos = self.GetScrollPos(wx.HORIZONTAL)
-                ysPos = self.GetScrollPos(wx.VERTICAL)
-                tLeft = xsPos * wScroll / p.wTick
-                wHalf = wWavePart / 2
-                dtHalf = wHalf / p.wTick
-                tCenter = tLeft + dtHalf
+                x_scroll_pos = self.GetScrollPos(wx.HORIZONTAL)
+                y_scroll_pos = self.GetScrollPos(wx.VERTICAL)
+                t_left = x_scroll_pos * w_scroll / p.w_tick
+                w_half = w_wave_part / 2
+                dt_half = w_half / p.w_tick
+                t_center = t_left + dt_half
                 # recalculate scroll position with new zoom
-                dtHalf = wHalf / frame.wTick
-                tLeft = tCenter - dtHalf
-                xsPos = max(int(tLeft * frame.wTick / wScroll + 0.5), 0)
-            ##print("Adjust start=", startTick, "end=", endTick,
-            ##        "xsPos=", xsPosPre, "->", xsPos,
-            ##        "xsmax=", xsmax, "x/m=", 100*xsPos/xsmax,
-            ##        "wid=", p.wTick, "->", frame.wTick)
-            p.wTick = frame.wTick
-            self.SetScrollbars(wScroll, hRow, xsmax, ysmax, xsPos, ysPos,
-                               False)
-            ##self.Scroll(xsPos, -1)
+                dt_half = w_half / frame.w_tick
+                t_left = t_center - dt_half
+                x_scroll_pos = max(int(t_left * frame.w_tick / w_scroll + 0.5), 0)
+            ##print(f"Adjust {start_tick=} {end_tick=} ",
+            ##        f"{x_scroll_pos_pre=} -> {x_scroll_pos} ",
+            ##        f"{x_scroll_max=} x/m={100*x_scroll_pos/x_scroll_max} ",
+            ##        f"wid={p.w_tick} -> {frame.w_tick}")
+            p.w_tick = frame.w_tick
+            self.SetScrollbars(
+                w_scroll, h_row, x_scroll_max, y_scroll_max, x_scroll_pos, y_scroll_pos, False
+            )
+            ##self.Scroll(x_scroll_pos, -1)
         else:
             # no zoom: just insure scrollbars match scrolled contents
-            p.xsPos = self.GetScrollPos(wx.HORIZONTAL)
-            p.ysPos = self.GetScrollPos(wx.VERTICAL)
-            self.SetScrollbars(wScroll, hRow, xsmax, ysmax, p.xsPos, p.ysPos,
-                               False)
+            p.x_scroll_pos = self.GetScrollPos(wx.HORIZONTAL)
+            p.y_scroll_pos = self.GetScrollPos(wx.VERTICAL)
+            self.SetScrollbars(
+                w_scroll, h_row, x_scroll_max, y_scroll_max, p.x_scroll_pos, p.y_scroll_pos, False
+            )
 
-        self.xsPosLast = -1
+        self.xs_pos_last = -1
         self.Refresh()
 
-    #--------------------------------------------------------------------------
-    # Prepare to draw a line segment of one signal.
-    # Gathers lines and text for the next segment of a signal from xp to x,
-    # using vp to v to determine its shape and contents.
-    #
-    # (xp, yp):   end of previous event edge
-    # (x-1, yp):  start of current event edge
-    # (x, y):     end of current event edge
+    def GatherLineSegment(self, dc, sig, x_prev, v_prev, x, v, show_sig_name=True):
+        """Prepare to draw a line segment of one signal.
+        Gathers lines and text for the next segment of a signal from x_prev to x,
+        using v_prev to v to determine its shape and contents.
 
-    def GthrLineSegment(self, dc, sig, xp, vp, x, v, showSigName=True):
-        yL = self.yL
+        (x_prev, y_prev):   end of previous event edge
+        (x-1, y_prev):  start of current event edge
+        (x, y):     end of current event edge
+        """
+        y_low = self.y_low
         lines = self.lines
         if self.debug:
-            print("GthrLineSegment: xp=", xp, "vp=", vp, "x=", x, "v=", v)
+            print(f"GatherLineSegment: {x_prev=} {v_prev=} {x=} {v=}")
 
-        yp = yL - int(Level2V[vp] * self.hHL)
-        y = yL - int(Level2V[v] * self.hHL)
-        lines.append((xp, yp, x-1, yp))
-        lines.append((x-1, yp, x, y))
+        y_prev = y_low - int(level_to_voltage[v_prev] * self.h_hi_low)
+        y = y_low - int(level_to_voltage[v] * self.h_hi_low)
+        lines.append((x_prev, y_prev, x - 1, y_prev))
+        lines.append((x - 1, y_prev, x, y))
         # include signal name every so often
-        if showText and x-self.w-self.wEventName > self.xtext and \
-                (x - xp) > (self.w + 4) and showSigName:
+        if (
+            show_text
+            and x - self.w - self.w_event_name > self.x_text
+            and (x - x_prev) > (self.w + 4)
+            and show_sig_name
+        ):
             (w, h) = dc.GetTextExtent(sig.name)
             self.texts.append(sig.name)
-            bl = self.textBaseline
-            self.textCoords.append((x - w - 2,
-                                    yL - self.hName + 1 + (vp == "H") - bl))
-            self.textFGs.append(green)
-            self.xtext = x
+            baseline = self.text_baseline
+            self.text_coords.append(
+                (x - w - 2, y_low - self.h_name + 1 + (v_prev == "H") - baseline)
+            )
+            self.text_foregrounds.append(green)
+            self.x_text = x
 
-    #--------------------------------------------------------------------------
-    # Prepare to draw a bus segment of one signal.
-    # Gathers lines and text for the next segment of a signal from xp to x,
-    # using vp to v to determine its shape and contents.
-    #
-    # (xp, yp):   end of previous event
-    # (x, y):     end of current event
+    def GatherBusSegment(self, dc, sig, x_prev, v_prev, x, v):
+        """Prepare to draw a bus segment of one signal.
+        Gathers lines and text for the next segment of a signal from x_prev to x,
+        using v_prev to v to determine its shape and contents.
 
-    def GthrBusSegment(self, dc, sig, xp, vp, x, v):
-        yL = self.yL
+        (x_prev, y_prev):   end of previous event
+        (x, y):     end of current event
+        """
+        y_low = self.y_low
         lines = self.lines
         if self.debug:
-            print("GthrBusSegment: xp=", xp, "vp=", vp, "x=", x, "v=", v)
+            print(f"GatherBusSegment: {x_prev=} {v_prev=} {x=} {v=}")
 
-        yH = yL - self.hHL
-        if vp == None or vp == "X":
+        y_hi = y_low - self.h_hi_low
+        if v_prev == None or v_prev == "X":
             # a "don't care" or unresolvable-edges segment: filled with gray
-            self.Xpolys.append(((xp, yL), (xp, yH), (x, yH), (x, yL)))
+            self.X_polys.append(((x_prev, y_low), (x_prev, y_hi), (x, y_hi), (x, y_low)))
         else:
-            lines.append((xp, yL, x,  yL))
-            lines.append((x,  yL, x,  yH))
-            lines.append((x,  yH, xp, yH))
-            lines.append((xp, yH, xp, yL))
+            lines.append((x_prev, y_low, x, y_low))
+            lines.append((x, y_low, x, y_hi))
+            lines.append((x, y_hi, x_prev, y_hi))
+            lines.append((x_prev, y_hi, x_prev, y_low))
             # include bus-value text if there's room for it
-            nbits = abs(sig.lsub - sig.rsub) + 1
-            if showText and isinstance(vp, int):
-                valName = "%0*X" % ((nbits+2)//4, vp)
-                (w, h) = dc.GetTextExtent(valName)
-                if x-w-2 > xp:
-                    dxp = min((x - xp)//2, 100)
-                    self.texts.append(valName)
-                    bl = self.textBaseline
-                    self.textCoords.append((xp + dxp - w//2,
-                                            yL - self.hName + 2 - bl))
-                    self.textFGs.append(wx.BLACK)
+            n_bits = abs(sig.l_sub - sig.r_sub) + 1
+            if show_text and isinstance(v_prev, int):
+                value_name = "%0*X" % ((n_bits + 2) // 4, v_prev)
+                (w, h) = dc.GetTextExtent(value_name)
+                if x - w - 2 > x_prev:
+                    dxp = min((x - x_prev) // 2, 100)
+                    self.texts.append(value_name)
+                    baseline = self.text_baseline
+                    self.text_coords.append(
+                        (x_prev + dxp - w // 2, y_low - self.h_name + 2 - baseline)
+                    )
+                    self.text_foregrounds.append(wx.BLACK)
 
-    #--------------------------------------------------------------------------
-    # Draw a attached text on one signal.
-
-    def DrawAttachedText(self, dc, sig, x, v, xbeg, xend):
+    def DrawAttachedText(self, dc, sig, x, v, x_begin, x_end):
+        """Draw a attached text on one signal."""
         if self.debug:
-            print("DrawAttachedText: x=", x, "v=", v)
-        if not showText:
+            print("DrawAttachedText: {x=} {v=}")
+        if not show_text:
             return
 
-        inFront, text = v
+        in_front, text = v
         color = blue
         weight = wx.BOLD
         # extract color codes from text, if any
@@ -665,224 +619,229 @@ class TimingPane(wx.ScrolledWindow):
             elif c == "p":
                 weight = wx.NORMAL
         (w, h) = dc.GetTextExtent(text)
-        if Level2V[inFront]:
+        if level_to_voltage[in_front]:
             # place text in front of x
-            x -= (w + 2)
-            self.xtext = x
+            x -= w + 2
+            self.x_text = x
         else:
             # place text after x
             x += 2
-        y = self.yL - self.hName + 1 - self.textBaseline
-        if x > xbeg and x + w < xend:
+        y = self.y_low - self.h_name + 1 - self.text_baseline
+        if x > x_begin and x + w < x_end:
             if weight != wx.NORMAL:
-                dc.SetFont(wx.Font(self.nameFontSz, wx.SWISS, wx.NORMAL,
-                                   weight))
+                dc.SetFont(wx.Font(self.name_font_size, wx.SWISS, wx.NORMAL, weight))
                 dc.SetTextForeground(color)
                 dc.DrawText(text, x, y)
-                dc.SetFont(wx.Font(self.nameFontSz, wx.SWISS, wx.NORMAL,
-                                   wx.NORMAL))
+                dc.SetFont(wx.Font(self.name_font_size, wx.SWISS, wx.NORMAL, wx.NORMAL))
             else:
                 self.texts.append(text)
-                self.textCoords.append((x, y))
-                self.textFGs.append(color)
-
-    #--------------------------------------------------------------------------
-    # Draw timing window.
-    # Only draws the (L H X Z) subset of possible signal levels.
+                self.text_coords.append((x, y))
+                self.text_foregrounds.append(color)
 
     def OnPaint(self, event):
-        ##print("OnPaint: size=", self.xmax, self.ymax)
+        """Draw timing window.
+        Only draws the (L H X Z) subset of possible signal levels.
+        """
+        ##print("OnPaint: size=", self.x_max, self.y_max)
         frame = self.frame
         p = frame.p
         self.SetBackgroundColour("WHITE")
 
-        xmax = self.xmax
-        ymax = self.ymax
-        wWin, hWin = self.GetClientSize()
-        wWin -= dispMargin; hWin -= dispMargin
+        x_max = self.x_max
+        y_max = self.y_max
+        w_win, h_win = self.GetClientSize()
+        w_win -= disp_margin
+        h_win -= disp_margin
 
-        # (t, i, v): time, indexToSignal, voltageOfIndexedSignal.
+        # (t, i, v): time, index to signal, voltage of indexed signal.
         # (x, y): scrolled-screen coords, in pixels, (x0,y0): upper left corner
-        xsPos = self.GetScrollPos(wx.HORIZONTAL)
-        ysPos = self.GetScrollPos(wx.VERTICAL)
-        hRow   = self.hRow   # signal's row-to-row spacing in display
-        self.x0 = x0 = xsPos * self.wScroll
-        self.y0 = y0 = ysPos * hRow
+        x_scroll_pos = self.GetScrollPos(wx.HORIZONTAL)
+        y_scroll_pos = self.GetScrollPos(wx.VERTICAL)
+        h_row = self.h_row  # signal's row-to-row spacing in display
+        self.x0 = x0 = x_scroll_pos * self.w_scroll
+        self.y0 = y0 = y_scroll_pos * h_row
 
-        wNames = self.wNames # pixel width of signal names part of diagram
-        xbeg = wNames
+        w_names = self.w_names  # pixel width of signal names part of diagram
+        x_begin = w_names
         # right, bottom edge of visible waveforms
-        xend = min(wWin, xmax)
-        yend = min(hWin, ymax)
-        dx = frame.wTick
-        bl = self.textBaseline
-        xyEdgeHilite = None
-        x, y = self.xMouse, self.yMouse
-        tMouse = self.X2T(x)
-        iMouse = self.Y2I(y)
-        if x < self.wNames or x > xend:
-            tMouse = None
-        ##print("mouse=", iMouse, tMouse, self.mouseDown)
+        x_end = min(w_win, x_max)
+        y_end = min(h_win, y_max)
+        dx = frame.w_tick
+        baseline = self.text_baseline
+        xy_edge_highlight = None
+        x, y = self.x_mouse, self.y_mouse
+        t_mouse = self.x_pos_to_time_tick(x)
+        i_mouse = self.y_pos_to_index(y)
+        if x < self.w_names or x > x_end:
+            t_mouse = None
+        ##print(f"{i_mouse=} {t_mouse=} {self.mouse_down)
 
-        if useSnap or not \
-              (xsPos == self.xsPosLast and ysPos == self.ysPosLast and \
-               wWin == self.wWinLast and hWin == self.hWinLast and \
-                p.wTick == self.wTickLast):
-            self.xsPosLast = xsPos
-            self.ysPosLast = ysPos
-            self.wWinLast = wWin
-            self.hWinLast = hWin
-            self.wTickLast = p.wTick
+        if use_snap or not (
+            x_scroll_pos == self.xs_pos_last
+            and y_scroll_pos == self.ys_pos_last
+            and w_win == self.w_win_last
+            and h_win == self.h_win_last
+            and p.w_tick == self.w_tick_last
+        ):
+            self.xs_pos_last = x_scroll_pos
+            self.ys_pos_last = y_scroll_pos
+            self.w_win_last = w_win
+            self.h_win_last = h_win
+            self.w_tick_last = p.w_tick
             dc = wx.MemoryDC()
-            self.wavesBitmap = wx.Bitmap(wWin, hWin)
-            dc.SelectObject(self.wavesBitmap)
+            self.waves_bitmap = wx.Bitmap(w_win, h_win)
+            dc.SelectObject(self.waves_bitmap)
             ##print("OnPaint clip=", dc.GetClippingBox())
             dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
             dc.Clear()
 
-            s = p.timingScale
-            self.hHL        = int(8*s)    # signal's L-to-H spacing
-            ##self.hHW      = int(s)      # signal's L-to-V and H-to-W spacing
-            self.hName      = int(8*s)    # signal name text size
-            self.nameFontSz = self.hName * fontSize // 11
-            self.wEventName = int(200*s)  # min pixels from prev event, drawing
+            s = p.timing_scale
+            self.h_hi_low = int(8 * s)  # signal's L-to-H spacing
+            ##self.h_hi_weak = int(s)  # signal's L-to-V and H-to-W spacing
+            self.h_name = int(8 * s)  # signal name text size
+            self.name_font_size = self.h_name * font_size // 11
+            self.w_event_name = int(200 * s)  # min pixels from prev event, drawing
             # draw names separator line
             dc.SetPen(wx.Pen("BLACK"))
-            ##print("  OnPaint gen line=", xbeg, xsPos, ysPos)
-            dc.DrawLine(xbeg-1, 0, xbeg-1, hWin)
-            dc.SetFont(wx.Font(self.nameFontSz, wx.SWISS, wx.NORMAL,wx.NORMAL))
+            ##print("  OnPaint gen line=", x_begin, x_scroll_pos, y_scroll_pos)
+            dc.DrawLine(x_begin - 1, 0, x_begin - 1, h_win)
+            dc.SetFont(wx.Font(self.name_font_size, wx.SWISS, wx.NORMAL, wx.NORMAL))
             ##print("UserScale=", dc.GetUserScale(), "Mode=", dc.GetMapMode(),
             ##    "PPI=", dc.GetPPI())
 
-            gridPen = wx.Pen(ltblue, 1, wx.SOLID)
-            haveDrawnBars = False
+            grid_pen = wx.Pen(ltblue, 1, wx.SOLID)
+            have_drawn_bars = False
 
             # draw vertical bars at rising edges of given 'bar' signal
-            if frame.barSignal != None:
-                sig = frame.sigs[frame.barSignal]
-                # xtext: next allowable position of drawn text
-                xtext = xbeg
-                xp = -x0
+            if frame.bar_signal != None:
+                sig = frame.sigs[frame.bar_signal]
+                # x_text: next allowable position of drawn text
+                x_text = x_begin
+                x_prev = -x0
                 for i in range(0, len(sig.events), 2):
-                    t, v = sig.events[i:i+2]
-                    x = wNames + int(t * dx) - x0
-                    if x > xend:
+                    t, v = sig.events[i : i + 2]
+                    x = w_names + int(t * dx) - x0
+                    if x > x_end:
                         break
-                    if x > xbeg and x > xp+4 and v == "H":
-                        barName = "%g" % (t / ticksNS)
-                        if showText:
-                            (w, h) = dc.GetTextExtent(barName)
-                            if x-w//2-5 > xtext:
+                    if x > x_begin and x > x_prev + 4 and v == "H":
+                        bar_name = "%g" % (t / tick_ns)
+                        if show_text:
+                            (w, h) = dc.GetTextExtent(bar_name)
+                            if x - w // 2 - 5 > x_text:
                                 dc.SetTextForeground(dkblue)
-                                dc.DrawText(barName, x-w//2, 2-bl)
-                                xtext = x + w//2
-                                haveDrawnBars = True
-                        dc.SetPen(gridPen)
-                        dc.DrawLine(x, hRow, x, ymax)
-                    xp = x
+                                dc.DrawText(bar_name, x - w // 2, 2 - baseline)
+                                x_text = x + w // 2
+                                have_drawn_bars = True
+                        dc.SetPen(grid_pen)
+                        dc.DrawLine(x, h_row, x, y_max)
+                    x_prev = x
 
             # if bar signal too fine, just draw 1 usec intervals
-            if showText and not haveDrawnBars:
-                xtext = xbeg
-                for t in range(0, frame.nTicks, 10000):
-                    x = wNames + int(t * dx) - x0
-                    if x > xend:
+            if show_text and not have_drawn_bars:
+                x_text = x_begin
+                for t in range(0, frame.n_ticks, 10000):
+                    x = w_names + int(t * dx) - x0
+                    if x > x_end:
                         break
-                    if x > xbeg:
-                        barName = "%g" % (t / ticksNS)
-                        (w, h) = dc.GetTextExtent(barName)
-                        if x-w-5 > xtext:
+                    if x > x_begin:
+                        bar_name = "%g" % (t / tick_ns)
+                        (w, h) = dc.GetTextExtent(bar_name)
+                        if x - w - 5 > x_text:
                             dc.SetTextForeground(dkblue)
-                            dc.DrawText(barName, x-w//2, 2-bl)
-                            xtext = x
-                        ##dc.SetPen(gridPen)
-                        ##dc.DrawLine(x, hRow, x, ymax)
+                            dc.DrawText(bar_name, x - w // 2, 2 - baseline)
+                            x_text = x
+                        ##dc.SetPen(grid_pen)
+                        ##dc.DrawLine(x, h_row, x, y_max)
 
             # draw each signal's name and waveform
-            i = (y0+hRow-1) // hRow
-            yL = (i+2)*hRow - y0
+            i = (y0 + h_row - 1) // h_row
+            y_low = (i + 2) * h_row - y0
 
-            for sig in self.dispSigs[i:]:
-                self.yL = yL
-                if 0 and sig.isBus:
-                    name = "%s[%d:%d]" % (sig.name, sig.lsub, sig.rsub)
+            for sig in self.disp_sigs[i:]:
+                self.y_low = y_low
+                if 0 and sig.is_bus:
+                    name = "%s[%d:%d]" % (sig.name, sig.l_sub, sig.r_sub)
                 else:
                     name = sig.name
-                if showText:
+                if show_text:
                     (w, h) = dc.GetTextExtent(name)
                     self.w = w
                     dc.SetTextForeground(green)
-                    dc.DrawText(name, xbeg - w - 3, yL-self.hName+1-bl)
+                    dc.DrawText(name, x_begin - w - 3, y_low - self.h_name + 1 - baseline)
 
-                dc.SetPen(gridPen)
-                dc.DrawLine(xbeg, yL, xend, yL)
+                dc.SetPen(grid_pen)
+                dc.DrawLine(x_begin, y_low, x_end, y_low)
                 self.lines = []
-                self.Xpolys = []
+                self.X_polys = []
                 self.texts = []
-                self.textCoords = []
-                self.textFGs = []
-                # xp and vp are prior-displayed edge position and value
-                xp = xpd = max(wNames, xbeg-1)
-                vp = sig.events[1]
-                self.xtext = 0
+                self.text_coords = []
+                self.text_foregrounds = []
+                # x_prev and v_prev are prior-displayed edge position and value
+                x_prev = xpd = max(w_names, x_begin - 1)
+                v_prev = sig.events[1]
+                self.x_text = 0
                 self.debug = 0 and (sig.name == "Vec1[1:0]")
 
                 # gather-to-draw each segment of a signal
                 for t, v in pairwise(sig.events):
-                    x = min(wNames - x0 + int(t * dx), xend+2)
+                    x = min(w_names - x0 + int(t * dx), x_end + 2)
                     if self.debug:
-                        print("\nDraw loop:", sig.name, "x=", x, "xp=", xp)
-                    if sig.isBus or len(v) == 1:
-                        if x >= xbeg:
-                            if x > xp+1:
-                                if v != vp:
-                                    if (useSnap and iMouse == i and tMouse
-                                            and abs(tMouse - t) < 500):
+                        print(f"\nDraw loop: {sig.name} {x=} {x_prev=}")
+                    if sig.is_bus or len(v) == 1:
+                        if x >= x_begin:
+                            if x > x_prev + 1:
+                                if v != v_prev:
+                                    if (
+                                        use_snap
+                                        and i_mouse == i
+                                        and t_mouse
+                                        and abs(t_mouse - t) < 500
+                                    ):
                                         # snap mouse ptr to nearby edge
-                                        xyEdgeHilite = (x + x0,
-                                                yL-self.hHL//2 + y0)
-                                        tMouse = t
-                                    
-                                    if sig.isBus or vp == "X":
-                                        self.GthrBusSegment(dc, sig,
-                                                     xp, vp, x, v)
+                                        xy_edge_highlight = (
+                                            x + x0,
+                                            y_low - self.h_hi_low // 2 + y0,
+                                        )
+                                        t_mouse = t
+
+                                    if sig.is_bus or v_prev == "X":
+                                        self.GatherBusSegment(dc, sig, x_prev, v_prev, x, v)
                                     else:
-                                        self.GthrLineSegment(dc, sig,
-                                                xp, vp, x, v, x < xend)
-                                    if xp != xpd:
-                                        self.GthrBusSegment(dc, sig,
-                                                   xpd, "X", xp, vp)
-                                    xpd = xp = x
+                                        self.GatherLineSegment(
+                                            dc, sig, x_prev, v_prev, x, v, x < x_end
+                                        )
+                                    if x_prev != xpd:
+                                        self.GatherBusSegment(dc, sig, xpd, "X", x_prev, v_prev)
+                                    xpd = x_prev = x
                             else:
-                                xp = x
-                        if x > xend:
+                                x_prev = x
+                        if x > x_end:
                             break
-                        vp = v
+                        v_prev = v
                     else:
-                        self.DrawAttachedText(dc, sig, x, v, xbeg, xend)
+                        self.DrawAttachedText(dc, sig, x, v, x_begin, x_end)
 
                 # finish gathering-to-draw signal up to right edge
-                if xend > xp+1:
-                    if sig.isBus or vp == "X":
-                        self.GthrBusSegment(dc, sig, xp, vp, xend, v)
+                if x_end > x_prev + 1:
+                    if sig.is_bus or v_prev == "X":
+                        self.GatherBusSegment(dc, sig, x_prev, v_prev, x_end, v)
                     else:
                         if len(v) == 1:
-                            self.GthrLineSegment(dc, sig, xp, vp,
-                                                 xend, v, False)
-                if xp != xpd:
-                    self.GthrBusSegment(dc, sig, xpd, "X", xp, vp)
+                            self.GatherLineSegment(dc, sig, x_prev, v_prev, x_end, v, False)
+                if x_prev != xpd:
+                    self.GatherBusSegment(dc, sig, xpd, "X", x_prev, v_prev)
 
                 # draw gathered lines and polygons
                 dc.SetPen(wx.Pen("BLACK"))
                 dc.DrawLineList(self.lines)
-                if len(self.Xpolys) > 0:
+                if len(self.X_polys) > 0:
                     dc.SetBrush(wx.Brush(dkgray))
-                    dc.DrawPolygonList(self.Xpolys)
-                dc.DrawTextList(self.texts, self.textCoords, self.textFGs)
+                    dc.DrawPolygonList(self.X_polys)
+                dc.DrawTextList(self.texts, self.text_coords, self.text_foregrounds)
                 self.debug = False
-                yL += hRow
+                y_low += h_row
                 i += 1
-                if yL > yend:
+                if y_low > y_end:
                     break
             dc.SelectObject(wx.NullBitmap)
 
@@ -894,164 +853,147 @@ class TimingPane(wx.ScrolledWindow):
             dc = pdc
 
         self.PrepareDC(dc)
-        dc.DrawBitmap(self.wavesBitmap, x0, y0)
+        dc.DrawBitmap(self.waves_bitmap, x0, y0)
 
         # determine cursor state
-        if self.mouseDown:
-            self.iNameCursor = None
-            self.tTimeCursor = None
-            if not self.mouseWasDown:
-                self.tiCursorsStart = tMouse, iMouse
+        if self.mouse_down:
+            self.i_name_cursor = None
+            self.t_time_cursor = None
+            if not self.mouse_was_down:
+                self.ti_cursors_start = t_mouse, i_mouse
             else:
-                if self.mouseArea == "names":
-                    self.iNameCursor = iMouse
+                if self.mouse_area == "names":
+                    self.i_name_cursor = i_mouse
                 else:
-                    self.tTimeCursor = tMouse
-        self.mouseWasDown = self.mouseDown
+                    self.t_time_cursor = t_mouse
+        self.mouse_was_down = self.mouse_down
 
         # draw name or time cursor, if active
-        xbeg += x0
-        xend += x0
-        yend += y0
-        dc.SetFont(wx.Font(self.nameFontSz, wx.SWISS, wx.NORMAL, wx.NORMAL))
+        x_begin += x0
+        x_end += x0
+        y_end += y0
+        dc.SetFont(wx.Font(self.name_font_size, wx.SWISS, wx.NORMAL, wx.NORMAL))
         dc.SetTextForeground(dkblue)
-        if not tMouse:
-            tMouse = None
-            if self.tiCursorsStart:
-                tMouse = self.tiCursorsStart[0]
-        if tMouse:
-            s = locale._format("%%3.%df" % tickPlaces, float(tMouse)/ticksNS,
-                              grouping=True)
-            if self.tTimeCursor:
-                dc.DrawText(s, x0+1, y0+2-bl)
+        if not t_mouse:
+            t_mouse = None
+            if self.ti_cursors_start:
+                t_mouse = self.ti_cursors_start[0]
+        if t_mouse:
+            s = locale._format("%%3.%df" % tick_places, float(t_mouse) / tick_ns, grouping=True)
+            if self.t_time_cursor:
+                dc.DrawText(s, x0 + 1, y0 + 2 - baseline)
             else:
-                dc.DrawText("%s ns" % s, x0+10, y0+2-bl)
-        if self.tiCursorsStart:
+                dc.DrawText("%s ns" % s, x0 + 10, y0 + 2 - baseline)
+        if self.ti_cursors_start:
             dc.SetBrush(wx.Brush(wx.Colour(255, 255, 0, 64)))
             dc.SetPen(wx.Pen(wx.Colour(255, 255, 0, 64)))
-            tm0, im0 = self.tiCursorsStart
-            if self.iNameCursor:
-                y = max((self.iNameCursor + 1) * hRow, y0+hRow)
-                ym0 = max((im0 + 1) * hRow, y0+hRow)
+            tm0, im0 = self.ti_cursors_start
+            if self.i_name_cursor:
+                y = max((self.i_name_cursor + 1) * h_row, y0 + h_row)
+                ym0 = max((im0 + 1) * h_row, y0 + h_row)
                 if ym0 < y:
                     y, ym0 = ym0, y
-                dc.DrawRectangle(x0, y, xend - x0, ym0 - y)
-            elif self.tTimeCursor:
-                xm0 = min(max(wNames + int(tm0 * dx), xbeg), xend)
-                xm = min(max(wNames + int(self.tTimeCursor * dx), xbeg), xend)
+                dc.DrawRectangle(x0, y, x_end - x0, ym0 - y)
+            elif self.t_time_cursor:
+                xm0 = min(max(w_names + int(tm0 * dx), x_begin), x_end)
+                xm = min(max(w_names + int(self.t_time_cursor * dx), x_begin), x_end)
                 if xm0 > xm:
-                  xm, xm0 = xm0, xm
-                dc.DrawRectangle(xm0, y0, xm - xm0, yend - y0)
-                dt = float(abs(self.tTimeCursor - tm0)) / ticksNS
-                s = locale._format("%%3.%df" % tickPlaces, dt, grouping=True)
-                dc.DrawText("\u0394%s ns" % s, x0+65, y0+2-bl)
+                    xm, xm0 = xm0, xm
+                dc.DrawRectangle(xm0, y0, xm - xm0, y_end - y0)
+                dt = float(abs(self.t_time_cursor - tm0)) / tick_ns
+                s = locale._format("%%3.%df" % tick_places, dt, grouping=True)
+                dc.DrawText(f"\u0394{s} ns", x0 + 65, y0 + 2 - baseline)
 
-        if xyEdgeHilite:
+        if xy_edge_highlight:
             # snap: draw a small blue box to highlight signal edge
-            x, y = xyEdgeHilite
+            x, y = xy_edge_highlight
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             dc.SetPen(wx.Pen(blue))
-            dc.DrawRectangle(x-3, y-3, 6, 6)
+            dc.DrawRectangle(x - 3, y - 3, 6, 6)
 
         ##print("%3.3f: OnPaint() end" % (time.perf_counter() - t0))
 
-    #--------------------------------------------------------------------------
-    # Left mouse button pressed: start a cursor drag-select.
-
     def OnLeftDown(self, event):
+        """Left mouse button pressed: start a cursor drag-select."""
         ##mods = ('-','A')[event.AltDown()] + ('-','S')[event.ShiftDown()] + \
         ##       ('-','M')[event.MetaDown()]
         ##print("OnLeftDown", mods)
-        self.mouseDown = True
+        self.mouse_down = True
 
         x, y = event.GetPosition()
-        self.xMouse = x
-        self.yMouse = y
-        self.mouseClicked = True
+        self.x_mouse = x
+        self.y_mouse = y
+        self.mouse_clicked = True
         ##print("OnLeftDown: x,y=", x, y)
 
-        if x < self.wNames:
-            self.mouseArea = "names"
+        if x < self.w_names:
+            self.mouse_area = "names"
         else:
-            self.mouseArea = "main"
+            self.mouse_area = "main"
 
         self.Refresh()
         event.Skip()
 
-    #--------------------------------------------------------------------------
-    # Mouse button released.
-
     def OnLeftUp(self, event):
-        self.mouseDown = False
+        """Mouse button released."""
+        self.mouse_down = False
         event.Skip()
 
-    #--------------------------------------------------------------------------
-    # Left mouse button double-clicked.
-
     def OnLeftDClick(self, event):
+        """Left mouse button double-clicked."""
         x, y = event.GetPosition()
         ##print("OnLeftDClick: x,y=", x, y)
-        if x < self.wNames:
-            i = self.Y2I(y)
-            if i < len(self.dispSigs):
-                sig = self.dispSigs[i]
-                if sig.srcFile:
+        if x < self.w_names:
+            i = self.y_pos_to_index(y)
+            if i < len(self.disp_sigs):
+                sig = self.disp_sigs[i]
+                if sig.src_file:
                     self.frame.GotoSource(sig)
         event.Skip()
 
-    #--------------------------------------------------------------------------
-    # Right mouse button pressed.
-
     def OnRightDown(self, event):
+        """Right mouse button pressed."""
         x, y = event.GetPosition()
-        if x < self.wNames:
-            i = self.Y2I(y)
-            if i < len(self.dispSigs):
-                sig = self.dispSigs[i]
-                if sig.isBus:
+        if x < self.w_names:
+            i = self.y_pos_to_index(y)
+            if i < len(self.disp_sigs):
+                sig = self.disp_sigs[i]
+                if sig.is_bus:
                     # name area: expand bus bits
-                    self.clip = sig.bitSigs
-                    self.tiCursorsStart = None, i+1
-                    self.iNameCursor = i+2
+                    self.clip = sig.bit_sigs
+                    self.ti_cursors_start = None, i + 1
+                    self.i_name_cursor = i + 2
                     self.OnPaste(None)
         event.Skip()
 
-    #--------------------------------------------------------------------------
-    # Mouse moved: update cursor position.
-
     def OnMotion(self, event):
+        """Mouse moved: update cursor position."""
         frame = self.frame
         p = frame.p
         x, y = event.GetPosition()
-        self.xMouse = x
-        self.yMouse = y
-        self.mouseDown = not event.Moving()
+        self.x_mouse = x
+        self.y_mouse = y
+        self.mouse_down = not event.Moving()
         ##print("OnMotion: x,y=", x, y, "moving=", event.Moving())
 
         self.Refresh()
         event.Skip()
 
-    #--------------------------------------------------------------------------
-    # Window scrolling event: update displayed cursor position.
-
     def OnScrollWin(self, event):
+        """Window scrolling event: update displayed cursor position."""
         ##print("OnScrollWin: orient=", event.GetOrientation())
         if event.GetOrientation() == wx.HORIZONTAL:
             self.Refresh()
         event.Skip()
 
-    #--------------------------------------------------------------------------
-    # Mouse left timing pane area.
-
     def OnLeave(self, event):
-        self.xMouse = 0
+        """Mouse left timing pane area."""
+        self.x_mouse = 0
         self.Refresh()
         event.Skip()
 
-    #--------------------------------------------------------------------------
-    # Regular key was pressed.
-
     def OnKeyDown(self, event):
+        """Regular key was pressed."""
         p = self.frame.p
         k = event.GetKeyCode()
         m = event.GetModifiers()
@@ -1059,323 +1001,339 @@ class TimingPane(wx.ScrolledWindow):
 
         # handle Command-arrow combinations to scroll to ends
         if m == wx.MOD_CONTROL:
-            xsPos = self.GetScrollPos(wx.HORIZONTAL)
-            ysPos = self.GetScrollPos(wx.VERTICAL)
-            if   k == wx.WXK_UP:    ysPos = 0
-            elif k == wx.WXK_DOWN:  ysPos = self.ysmax
-            elif k == wx.WXK_LEFT:  xsPos = 0
-            elif k == wx.WXK_RIGHT: xsPos = self.xsmax
-            else: k = None
+            x_scroll_pos = self.GetScrollPos(wx.HORIZONTAL)
+            y_scroll_pos = self.GetScrollPos(wx.VERTICAL)
+            if k == wx.WXK_UP:
+                y_scroll_pos = 0
+            elif k == wx.WXK_DOWN:
+                y_scroll_pos = self.y_scroll_max
+            elif k == wx.WXK_LEFT:
+                x_scroll_pos = 0
+            elif k == wx.WXK_RIGHT:
+                x_scroll_pos = self.x_scroll_max
+            else:
+                k = None
             if k:
-                p.xsPos, p.ysPos = xsPos, ysPos
-                self.haveSPos = False
+                p.x_scroll_pos, p.y_scroll_pos = x_scroll_pos, y_scroll_pos
+                self.have_screen_pos = False
                 self.AdjustMyScrollbars()
 
         event.Skip()
         self.Refresh()
 
-    #--------------------------------------------------------------------------
-    # Get indecies into self.dispSigs[] of signals selected by name cursor.
-
     def NameCursorIndecies(self):
-        i0 = self.iNameCursor
+        """Get indecies into self.disp_sigs[] of signals selected by name cursor."""
+        i0 = self.i_name_cursor
         if not i0:
             return None, None
-        i1 = self.tiCursorsStart[1] 
+        i1 = self.ti_cursors_start[1]
         if i0 > i1:
             i0, i1 = i1, i0
         return i0, i1
 
-    #--------------------------------------------------------------------------
-    # Cut selected signals to the clipboard.
-
     def OnCut(self, event):
+        """Cut selected signals to the clipboard."""
         i0, i1 = self.NameCursorIndecies()
         if i0:
-            self.clip = self.dispSigs[i0:i1]
+            self.clip = self.disp_sigs[i0:i1]
             for sig in self.clip:
                 sig.isDisplayed = False
-            self.iNameCursor = None
+            self.i_name_cursor = None
             p = self.frame.p
             self.AdjustMyScrollbars()
 
-    #--------------------------------------------------------------------------
-    # Copy selected signals to the clipboard.
-
     def OnCopy(self, event):
+        """Copy selected signals to the clipboard."""
         i0, i1 = self.NameCursorIndecies()
         if i0:
-            self.clip = self.dispSigs[i0:i1]
-
-    #--------------------------------------------------------------------------
-    # Paste clipboard signals to cursor position.
+            self.clip = self.disp_sigs[i0:i1]
 
     def OnPaste(self, event):
+        """Paste clipboard signals to cursor position."""
         i0, i1 = self.NameCursorIndecies()
         if i0 and self.clip:
             p = self.frame.p
-            newSigs = {}
-            for sig in self.dispSigs[:i0]:
-                newSigs[sig.index] = sig
+            new_sigs = {}
+            for sig in self.disp_sigs[:i0]:
+                new_sigs[sig.index] = sig
             for sig in self.clip:
-                newSigs[sig.index] = sig
+                new_sigs[sig.index] = sig
                 sig.isDisplayed = True
-            for sig in self.dispSigs[i0:]:
-                newSigs[sig.index] = sig
-            self.frame.sigs = newSigs
-            self.iNameCursor = i0
-            self.tiCursorsStart = None, i0 + len(self.clip)
+            for sig in self.disp_sigs[i0:]:
+                new_sigs[sig.index] = sig
+            self.frame.sigs = new_sigs
+            self.i_name_cursor = i0
+            self.ti_cursors_start = None, i0 + len(self.clip)
             self.AdjustMyScrollbars()
 
-    #--------------------------------------------------------------------------
-    # Find string within a signal name and center window on it.
-
-    def Find(self, findString, flags, fromTop=False):
+    def Find(self, find_string, flags, from_top=False):
+        """Find string within a signal name and center window on it."""
         p = self.frame.p
-        ignoreCase = not (flags & wx.FR_MATCHCASE)
+        ignore_case = not (flags & wx.FR_MATCHCASE)
         whole = flags & wx.FR_WHOLEWORD
-        s = findString
-        if ignoreCase:
+        s = find_string
+        if ignore_case:
             s = s.upper()
         i0 = -1
-        for i0, sig in enumerate(self.dispSigs):
-            if (fromTop or i0 > self.iNameCursor):
+        for i0, sig in enumerate(self.disp_sigs):
+            if from_top or i0 > self.i_name_cursor:
                 name = sig.name
-                if ignoreCase:
+                if ignore_case:
                     name = name.upper()
                 if (name.find(s) >= 0, name == s)[whole]:
                     ##print("Found signal", i0, sig.name)
-                    self.iNameCursor = i0
-                    self.tiCursorsStart = None, i0 + 1
+                    self.i_name_cursor = i0
+                    self.ti_cursors_start = None, i0 + 1
                     break
         else:
-            ##print("'%s' not found." % findString)
+            ##print("'%s' not found." % find_string)
             wx.Bell()
-            self.iNameCursor = 0
-            self.tiCursorsStart = None, 0
+            self.i_name_cursor = 0
+            self.ti_cursors_start = None, 0
 
         if i0 >= 0:
-            wWin, hWin = self.GetClientSize()
-            p.ysPos = (i0*self.hRow - hWin//2) // self.hRow
-            p.xsPos = self.GetScrollPos(wx.HORIZONTAL)
-            self.haveSPos = False
+            w_win, h_win = self.GetClientSize()
+            p.y_scroll_pos = (i0 * self.h_row - h_win // 2) // self.h_row
+            p.x_scroll_pos = self.GetScrollPos(wx.HORIZONTAL)
+            self.have_screen_pos = False
             self.AdjustMyScrollbars()
 
-#==============================================================================
-# A signal or bus of signals, read from events file.
 
 class Signal(object):
-    def __init__(self, index, name, events, srcFile, srcPos, isBus=False,
-                 lsub=0, rsub=0):
+    """A signal or bus of signals, read from events file."""
+
+    def __init__(self, index, name, events, src_file, src_pos, is_bus=False, l_sub=0, r_sub=0):
+        # args must match Py_BuildValue() in PVSimExtension.cc newSignalPy()
         self.index = index
         self.name = name
-        self.srcFile = srcFile
-        self.srcPos = srcPos
+        self.src_file = src_file
+        self.src_pos = src_pos
         self.events = events
-        self.isDisplayed = True
-        self.isBus = isBus
-        self.lsub = lsub
-        self.rsub = rsub
-        self.busSig = None
-        if isBus:
-            self.bitSigs = []
+        self.isDisplayed = True  # must be named "isDisplayed"
+        self.is_bus = is_bus
+        self.l_sub = l_sub
+        self.r_sub = r_sub
+        self.bus_sig = None
+        if is_bus:
+            self.bit_sigs = []
         else:
-            self.bitSigs = None
+            self.bit_sigs = None
         self.sub = None
 
     def __str__(self):
-        return "Signal('%s', %d)" % (self.name, self.index)
+        return f"Signal('{self.name}', {self.index})"
 
     def __repr__(self):
         return self.__str__()
 
 
-#==============================================================================
-# The main GUI frame.
-
 class PVSimFrame(wx.Frame):
-    def __init__(self, parent):
-        global fontSize
+    """The main GUI frame."""
 
-        self.mpPool = None
-        self.mpLogQueue = None
+    def __init__(self, parent):
+        global font_size
+
+        self.mp_pool = None
+        self.mp_log_queue = None
         sp = wx.StandardPaths.Get()
-        if isMac:
+        if is_mac:
             # in OSX, get PVSim.app/Contents/Resources/pvsim.py path
             # because GetResourcesDir() returns Python.app path instead
-            self.resDir = os.path.dirname(sys.argv[0])
+            self.res_dir = os.path.dirname(sys.argv[0])
         else:
-            self.resDir = sp.GetResourcesDir()
-        if isMac:
-            pvsimPath = os.path.dirname(os.path.dirname(self.resDir))
-        elif isLinux:
-            pvsimPath = os.path.abspath(sys.argv[0])
+            self.res_dir = sp.GetResourcesDir()
+        if is_mac:
+            pvsim_path = os.path.dirname(os.path.dirname(self.res_dir))
+        elif is_linux:
+            pvsim_path = os.path.abspath(sys.argv[0])
         else:
-            pvsimPath = sp.GetExecutablePath()
-        pvsimDir = os.path.dirname(pvsimPath)
+            pvsim_path = sp.GetExecutablePath()
+        pvsim_dir = os.path.dirname(pvsim_path)
         sep = os.path.sep
-        if len(pvsimDir) > 0:
-            pvsimDir += sep
-        self.pvsimDir = pvsimDir
+        if len(pvsim_dir) > 0:
+            pvsim_dir += sep
+        self.pvsim_dir = pvsim_dir
         self.p = p = Prefs()
 
-        # dataDir is where log file gets written
-        dataDir = sp.GetUserLocalDataDir()
-        if not os.path.exists(dataDir):
-            os.makedirs(dataDir)
-        os.chdir(dataDir)
+        # data_dir is where log file gets written
+        data_dir = sp.GetUserLocalDataDir()
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        os.chdir(data_dir)
 
         # use previous project, or copy in example project if none
-        p.get("projName", "example1")
-        projDir = p.get("projDir", None)
-        if not (projDir and os.path.exists(projDir)):
-            projDir = dataDir
+        p.get("proj_name", "example1")
+        proj_dir = p.get("proj_dir", None)
+        if not (proj_dir and os.path.exists(proj_dir)):
+            proj_dir = data_dir
+            ##print(f"New project directory {proj_dir}")
             for f in ("example1.psim", "example1.v"):
-                src = os.path.join(self.resDir, f)
+                src = os.path.join(self.res_dir, f)
                 if os.path.exists(src):
-                    shutil.copy(src, projDir)
+                    ##print(f"Copying {src} to {proj_dir}")
+                    shutil.copy(src, proj_dir)
                 else:
-                    projDir = None
+                    proj_dir = None
                     break
 
-        if projDir and not os.path.exists(projDir):
-            projDir = None
-        p.projDir = projDir
-        if projDir:
-            title = "PVSim - %s" % p.projName
+        if proj_dir and not os.path.exists(proj_dir):
+            ##print(f"Project director {proj_dir} doesn't exist!")
+            proj_dir = None
+        p.proj_dir = proj_dir
+        if proj_dir:
+            title = f"PVSim - {p.proj_name}"
         else:
             title = "PVSim"
 
-        wx.Frame.__init__(self, parent, -1, title,
-                          pos=p.get("framePos", (100, 30)),
-                          size=p.get("frameSize", (900, 950)))
-        
-        self.drawEnabled = False
-        self.barSignal = None
-        self.sigs = {}
-        self.orderFileName = None
-        self.nTicks = 0
-        self.wTick = p.get("wTick", 0.5)
-        p.get("timingScale", 1.4)
-        self.testChoices = None
+        frame_pos = p.get("frame_pos", (100, 30))
+        frame_size = p.get("frame_size", (900, 950))
+        ##print(f"Creating frame {title}: {frame_pos=} {frame_size=}")
+        wx.Frame.__init__(self, parent, -1, title, pos=frame_pos, size=frame_size)
 
-        # tell FrameManager to manage this frame        
+        self.draw_enabled = False
+        self.bar_signal = None
+        self.sigs = {}
+        self.order_file_name = None
+        self.n_ticks = 0
+        self.w_tick = p.get("w_tick", 0.5)
+        p.get("timing_scale", 1.4)
+        self.test_choices = None
+
+        # tell FrameManager to manage this frame
         self._mgr = mgr = wx.aui.AuiManager()
         mgr.SetManagedWindow(self)
         self.SetMinSize(wx.Size(400, 300))
-        self._mpLogNB = None
-        
+        self._mp_log_notebook = None
+
         self._perspectives = []
         self.n = 0
         self.x = 0
 
         # calibrate font point size for this system
-        font = wx.Font(fontSize, wx.SWISS, wx.NORMAL, wx.NORMAL)
+        font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.NORMAL)
         font.SetPixelSize((200, 200))
-        pointSize200px = font.GetPointSize()
-        adjFontSize = fontSize * pointSize200px // (170, 148)[isLinux]
-        if 0:
+        point_size_200px = font.GetPointSize()
+        adj_font_size = font_size * point_size_200px // (170, 148)[is_linux]
+        if 1:
             # test it
             dc = wx.ClientDC(self)
             dc.SetFont(font)
             extent = dc.GetTextExtent("M")
-            print("pointSize200px=", pointSize200px, "orig fs=", fontSize,
-                "new fs=", adjFontSize, "extent=", extent)
-            font10 = wx.Font(adjFontSize, wx.SWISS, wx.NORMAL, wx.NORMAL)
+            print(f"{point_size_200px=} {font_size=} {adj_font_size=} {extent=}")
+            font10 = wx.Font(adj_font_size, wx.SWISS, wx.NORMAL, wx.NORMAL)
             ps10 = font10.GetPointSize()
-            font27 = wx.Font(int(adjFontSize*2.7), wx.SWISS, wx.NORMAL, wx.NORMAL)
+            font27 = wx.Font(int(adj_font_size * 2.7), wx.SWISS, wx.NORMAL, wx.NORMAL)
             ps27 = font27.GetPointSize()
-            print("10-point pointsize=", ps10, "27-point pointsize=", ps27)
-        fontSize = adjFontSize
+            print(f"10-point pointsize={ps10}, 27-point pointsize={ps27}")
+        font_size = adj_font_size
 
         # set up menu bar
         self.menubar = wx.MenuBar()
-        self.fileMenu = self.CreateMenu("&File", [
-            ("Quit\tCTRL-Q",            "OnExit", wx.ID_EXIT),
-            ("About PVSim...",          "OnAbout", wx.ID_ABOUT),
-            ("Open .psim File...\tCTRL-O", "OnOpen", -1),
-            ("Save image to File...\tCTRL-S", "SaveToFile", -1),
-            ("Add divider line to log\tCTRL-D", "PrintDivider", -1),
-        ])
-        self.editMenu = self.CreateMenu("&Edit", [
-            ("Cut\tCTRL-X",              "OnCut", -1),
-            ("Copy\tCTRL-C",             "OnCopy", -1),
-            ("Paste\tCTRL-V",            "OnPaste", -1),
-            ("-",                        None, -1),
-            ("Find\tCTRL-F",             "OnShowFind", -1),
-            ("Find Again\tCTRL-G",       "OnFindAgain", -1),
-        ])
-        self.viewMenu = self.CreateMenu("&View", [
-            ("Zoom In\tCTRL-=",         "ZoomIn", -1),
-            ("Zoom Out\tCTRL--",        "ZoomOut", -1),
-            ("Zoom to Selection\tCTRL-E", "ZoomToSelection", -1),
-            ("Scale Smaller\tCTRL-[",   "ScaleSmaller", -1),
-            ("Scale Larger\tCTRL-]",    "ScaleLarger", -1),
-        ])
-        self.simulateMenu = self.CreateMenu("&Simulate", [
-            ("Run Simulation\tCTRL-R",  "RunSimulation", -1),
-            ("-",                        None, -1),
-        ])
-        self.testChoicesSubMenu = None
+        self.file_menu = self.CreateMenu(
+            "&File",
+            [
+                ("Quit\tCTRL-Q", "OnExit", wx.ID_EXIT),
+                ("About PVSim...", "OnAbout", wx.ID_ABOUT),
+                ("Open .psim File...\tCTRL-O", "OnOpen", -1),
+                ("Save image to File...\tCTRL-S", "SaveToFile", -1),
+                ("Add divider line to log\tCTRL-D", "PrintDivider", -1),
+            ],
+        )
+        self.edit_menu = self.CreateMenu(
+            "&Edit",
+            [
+                ("Cut\tCTRL-X", "OnCut", -1),
+                ("Copy\tCTRL-C", "OnCopy", -1),
+                ("Paste\tCTRL-V", "OnPaste", -1),
+                ("-", None, -1),
+                ("Find\tCTRL-F", "OnShowFind", -1),
+                ("Find Again\tCTRL-G", "OnFindAgain", -1),
+            ],
+        )
+        self.view_menu = self.CreateMenu(
+            "&View",
+            [
+                ("Zoom In\tCTRL-=", "ZoomIn", -1),
+                ("Zoom Out\tCTRL--", "ZoomOut", -1),
+                ("Zoom to Selection\tCTRL-E", "ZoomToSelection", -1),
+                ("Scale Smaller\tCTRL-[", "ScaleSmaller", -1),
+                ("Scale Larger\tCTRL-]", "ScaleLarger", -1),
+            ],
+        )
+        self.simulate_menu = self.CreateMenu(
+            "&Simulate",
+            [
+                ("Run Simulation\tCTRL-R", "RunSimulation", -1),
+                ("-", None, -1),
+            ],
+        )
+        self.test_choices_sub_menu = None
 
-        self.fileHistory = wx.FileHistory(8)
-        self.fileHistory.UseMenu(self.fileMenu)
-        self.fileHistory.Load(p.config())
-        self.Bind(wx.EVT_MENU_RANGE, self.OnFileHistory, id=wx.ID_FILE1,
-                  id2=wx.ID_FILE9)
-        if projDir:
-            projPath = os.path.join(projDir, p.projName) + ".psim"
-            self.fileHistory.AddFileToHistory(projPath)
-            self.fileHistory.Save(p.config())
+        self.file_history = wx.FileHistory(8)
+        self.file_history.UseMenu(self.file_menu)
+        self.file_history.Load(p.config())
+        self.Bind(wx.EVT_MENU_RANGE, self.OnFileHistory, id=wx.ID_FILE1, id2=wx.ID_FILE9)
+        if proj_dir:
+            proj_path = os.path.join(proj_dir, p.proj_name) + ".psim"
+            self.file_history.AddFileToHistory(proj_path)
+            self.file_history.Save(p.config())
 
         self.SetMenuBar(self.menubar)
 
         # create a log text panel below and set it to log all output
-        self.logP = logP = wx.TextCtrl(self, 
-                             style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_RICH)
-        logP.SetFont(wx.Font(fontSize, wx.TELETYPE, wx.NORMAL, wx.NORMAL))
+        style = wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH
+        self.log_panel = log_panel = wx.TextCtrl(self, style=style)
+        log_panel.SetFont(wx.Font(font_size, wx.TELETYPE, wx.NORMAL, wx.NORMAL))
         # allow panes to be inited to 70% width, default is 30%
         mgr.SetDockSizeConstraint(0.7, 0.7)
-        mgr.AddPane(logP, (wx.aui.AuiPaneInfo()
-                            .Direction(p.get("logDir", 3))
-                            .BestSize(p.get("logSize", (898, 300)))
-                            .Caption("Log")))
+        mgr.AddPane(
+            log_panel,
+            (
+                wx.aui.AuiPaneInfo()
+                .Direction(p.get("log_dir", 3))
+                .BestSize(p.get("log_size", (898, 300)))
+                .Caption("Log")
+            ),
+        )
 
         ##self.ChChartPanel = ChartPanel(self, self)
         ##mgr.AddPane(self.ChChartPanel, wx.aui.AuiPaneInfo().CenterPane())
-        self.timingP = timeP = TimingPane(self, self)
-        mgr.AddPane(timeP, (wx.aui.AuiPaneInfo().CenterPane()
-                            .BestSize(p.get("timingSize", (898, 600)))
-                            ))
- 
+        self.timing_panel = timing_panel = TimingPane(self, self)
+        mgr.AddPane(
+            timing_panel,
+            (wx.aui.AuiPaneInfo().CenterPane().BestSize(p.get("timing_size", (898, 600)))),
+        )
+
         # redirect all output to a log file
-        self.rootName = "pvsim"
+        self.root_name = "pvsim"
         if 1:
-            self.origStdout = sys.stdout
-            self.origStderr = sys.stderr
-            logPath = os.path.join(projDir,
-                self.rootName) if projDir is not None else self.rootName
-            ##print("logPath=", logPath)
-            sys.stdout = Logger(logPath, logP)
-            sys.stderr = Logger(logPath, logP)
-        if isWin:
-            curLocale = None
+            self.orig_stdout = sys.stdout
+            self.orig_stderr = sys.stderr
+            log_path = (
+                os.path.join(proj_dir, self.root_name) if proj_dir is not None else self.root_name
+            )
+            ##print(f"{log_path=}")
+            sys.stdout = Logger(log_path, log_panel)
+            sys.stderr = Logger(log_path, log_panel)
+            ##print(f"set up stdout, stderr loggers at {os.getcwd()}/{new_stdout.log_file.name}")
+        if is_win:
+            cur_locale = None
         else:
-            curLocale = locale.setlocale(locale.LC_ALL, "en_US")
+            cur_locale = locale.setlocale(locale.LC_ALL, "en_US")
         if 1:
             print("Python:", sys.version)
             print("%d-bit Python" % (len(bin(sys.maxsize)) - 1))
             print("wxPython:", wx.version())
             print("env LANG=", os.getenv("LANG"))
-            print("Locale:", curLocale)
+            print("Locale:", cur_locale)
             print("Platform:", sys.platform)
-            print("Resource dir:", self.resDir)
-            print("PVSim    dir:", pvsimDir)
-            print("Project  dir:", projDir)
+            print("Resource dir:", self.res_dir)
+            print("PVSim    dir:", pvsim_dir)
+            print("Project  dir:", proj_dir)
             print()
-        print("PVSim GUI", guiVersion, "started", time.ctime())
+        print("PVSim GUI", __version__, "started", time.ctime())
 
-        # "commit" all changes made to FrameManager   
+        # "commit" all changes made to FrameManager
         mgr.Update()
 
         ##self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
@@ -1388,17 +1346,17 @@ class PVSimFrame(wx.Frame):
         ##self.Bind(wx.aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         self.Bind(wx.EVT_MENU, self.OnExit, id=wx.ID_EXIT)
 
-        self.findString = ""
-        self.drawEnabled = True
-        self.timingP.AdjustMyScrollbars()
-        ##timeP.DoDrawing()
+        self.find_string = ""
+        self.draw_enabled = True
+        self.timing_panel.AdjustMyScrollbars()
+        ##timing_panel.DoDrawing()
         self.Show()
         ##print(time.perf_counter(), "PVSimFrame done")
-        self.timingP.SetFocus()
+        self.timing_panel.SetFocus()
 
-        if isMac:
+        if is_mac:
             # start the IPC server
-            (lis, success) = pub.subscribe(self.DoEditorCmd, "doCmd")
+            (listener, success) = pub.subscribe(self.DoEditorCmd, "doCmd")
             if not success:
                 print("listener already subscribed to 'doCmd'")
             self.ipc = IPCThread()
@@ -1407,186 +1365,171 @@ class PVSimFrame(wx.Frame):
 
         ##self.RunSimulation()      # include this when debugging
 
-    #--------------------------------------------------------------------------
-    # Create a menu from a list.
-
     def CreateMenu(self, name, itemList):
+        """Create a menu from a list."""
         menu = wx.Menu()
-        for itemName, handlerName, id in itemList:
-            if itemName == "-":
+        for item_name, handler_name, id in itemList:
+            if item_name == "-":
                 menu.AppendSeparator()
             else:
                 if id == -1:
                     id = wx.NewIdRef()
-                item = menu.Append(id, itemName)
-                if handlerName and hasattr(self, handlerName):
-                    self.Connect(id, -1, wx.wxEVT_COMMAND_MENU_SELECTED, \
-                                getattr(self, handlerName))
+                item = menu.Append(id, item_name)
+                if handler_name and hasattr(self, handler_name):
+                    self.Connect(
+                        id, -1, wx.wxEVT_COMMAND_MENU_SELECTED, getattr(self, handler_name)
+                    )
                 else:
                     item.Enable(False)
         self.menubar.Append(menu, name)
         return menu
 
-    #--------------------------------------------------------------------------
-    # Create a toolbar from a list.
-
     def CreateToolbar(self, bitmapSize, itemList):
+        """Create a toolbar from a list."""
         tb = wx.ToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize)
         tb.SetToolBitmapSize(bitmapSize)
-        for itemName, handlerName, bmp in itemList:
+        for item_name, handler_name, bmp in itemList:
             if isinstance(bmp, str):
                 bmp = wx.ArtProvider_GetBitmap(bmp)
-            if isinstance(itemName, str):
-                item = tb.AddLabelTool(wx.ID_ANY, itemName, bmp)
-                if hasattr(self, handlerName):
-                    self.Bind(wx.EVT_MENU, getattr(self, handlerName), item)
+            if isinstance(item_name, str):
+                item = tb.AddLabelTool(wx.ID_ANY, item_name, bmp)
+                if hasattr(self, handler_name):
+                    self.Bind(wx.EVT_MENU, getattr(self, handler_name), item)
             else:
-                item = tb.AddControl(itemName)
+                item = tb.AddControl(item_name)
         tb.Realize()
         return tb
 
     def PrintDivider(self, event):
         print("----------------------------")
 
-    #--------------------------------------------------------------------------
-    # 'About PVSim' dialog box.
-
     def OnAbout(self, event):
+        """Show the 'About PVSim' dialog box."""
         version = pvsimu.GetVersion()
         info = wx.AboutDialogInfo()
         info.Name = "PVSim"
-        if version == guiVersion:
+        if version == __version__:
             info.Version = version
         else:
-            info.Version = "%s/%s" % (version, guiVersion)
-        info.Copyright = "(C) 2012 Scott Forbes"
+            info.Version = f"{version}/{__version__}"
+        info.Copyright = __copyright__
         info.Description = wordwrap(
             "PVSim is a portable Verilog simulator that features a fast "
             "compile-simulate-display cycle.",
-            350, wx.ClientDC(self))
-        info.WebSite = ("http://sourceforge.net/projects/pvsim",
-            "PVSim home page")
+            350,
+            wx.ClientDC(self),
+        )
+        info.WebSite = ("https://github.com/forbes3100/pvsim", "PVSim home page")
         info.Developers = ["Scott Forbes"]
-        info.License = wordwrap(license.replace("# ", ""),
-            500, wx.ClientDC(self))
+        info.License = wordwrap(license.replace("# ", ""), 500, wx.ClientDC(self))
 
-        if isMac:
+        if is_mac:
             # AboutBox causes a crash on app exit if parent is omitted here
             # (see wxWidgets ticket #12402)
             wx.AboutBox(info, self)
         else:
             wx.AboutBox(info)
 
-    #--------------------------------------------------------------------------
-    # Pass cut,copy,paste to timing window.
-
     def OnCut(self, event):
+        """Pass cut to timing window."""
         widget = self.FindFocus()
-        if widget == self.timingP:
+        if widget == self.timing_panel:
             widget.OnCut(event)
         else:
             widget.Cut()
 
     def OnCopy(self, event):
+        """Pass copy to timing window."""
         widget = self.FindFocus()
-        if widget == self.timingP:
+        if widget == self.timing_panel:
             widget.OnCopy(event)
         else:
             widget.Copy()
 
     def OnPaste(self, event):
+        """Pass paste to timing window."""
         widget = self.FindFocus()
-        if widget == self.timingP:
+        if widget == self.timing_panel:
             widget.OnPaste(event)
         else:
             widget.Paste()
 
-    #--------------------------------------------------------------------------
-    # Bring up a Find Dialog to find a signal in the timing window.
-
     def OnShowFind(self, event):
+        """Bring up a Find Dialog to find a signal in the timing window."""
         data = wx.FindReplaceData()
-        data.SetFindString(self.findString)
+        data.SetFindString(self.find_string)
         dlg = wx.FindReplaceDialog(self, data, "Find", style=wx.FR_NOUPDOWN)
         dlg.data = data
         dlg.Show(True)
 
     def OnFind(self, event):
         dlg = event.GetDialog()
-        self.findString = event.GetFindString()
-        self.findFlags = event.GetFlags()
-        self.timingP.Find(self.findString, self.findFlags, True)
+        self.find_string = event.GetFindString()
+        self.find_flags = event.GetFlags()
+        self.timing_panel.Find(self.find_string, self.find_flags, True)
         dlg.Destroy()
 
     def OnFindAgain(self, event=None):
-        self.timingP.Find(self.findString, self.findFlags)
+        self.timing_panel.Find(self.find_string, self.find_flags)
 
     def OnFindCancel(self, event):
         event.GetDialog().Destroy()
 
-    #--------------------------------------------------------------------------
-    # Execute a command from the external editor.
-
     def DoEditorCmd(self, cmd):
+        """Execute a command from the external editor."""
         print("Doing editor command", cmd)
         if cmd == "find":
             # Get selected text from BBEdit editor
             result = subprocess.run(
-                ['osascript', '-e', 'return text of selection of application "BBEdit" as string'],
+                ["osascript", "-e", 'return text of selection of application "BBEdit" as string'],
                 capture_output=True,
-                text=True
+                text=True,
             )
             name = result.stdout.strip()
             print("Find signal", name)
-            self.timingP.Find(name, 0, True)
-
-    #--------------------------------------------------------------------------
-    # Zoom timing window in/out.
+            self.timing_panel.Find(name, 0, True)
 
     def ZoomIn(self, event=None):
-        self.wTick *= 2.
-        self.timingP.AdjustMyScrollbars()
+        """Zoom timing window in."""
+        self.w_tick *= 2.0
+        self.timing_panel.AdjustMyScrollbars()
 
     def ZoomOut(self, event=None):
-        self.wTick *= 0.5
-        self.timingP.AdjustMyScrollbars()
+        """Zoom timing window out."""
+        self.w_tick *= 0.5
+        self.timing_panel.AdjustMyScrollbars()
 
     def ZoomToSelection(self, event=None):
-        tp = self.timingP
-        if tp.tiCursorsStart and tp.tTimeCursor:
-            tp.AdjustMyScrollbars(startTick=tp.tiCursorsStart[0],
-                                  endTick=tp.tTimeCursor)
-
-    #--------------------------------------------------------------------------
-    # Adjust timing window text and detail size.
+        """Zoom timing window to selection."""
+        tp = self.timing_panel
+        if tp.ti_cursors_start and tp.t_time_cursor:
+            tp.AdjustMyScrollbars(start_tick=tp.ti_cursors_start[0], end_tick=tp.t_time_cursor)
 
     def ScaleSmaller(self, event=None):
-        self.p.timingScale /= 1.05
-        self.timingP.AdjustMyScrollbars()
+        """Make timing window text and detail smaller."""
+        self.p.timing_scale /= 1.05
+        self.timing_panel.AdjustMyScrollbars()
 
     def ScaleLarger(self, event=None):
-        self.p.timingScale *= 1.05
-        self.timingP.AdjustMyScrollbars()
-
-    #--------------------------------------------------------------------------
-    # Handle a resize event of the main frame or log pane sash.
+        """Make timing window text and detail larger."""
+        self.p.timing_scale *= 1.05
+        self.timing_panel.AdjustMyScrollbars()
 
     def OnSize(self, event):
-        self.p.frameSize = self.GetSize()
+        """Handle a resize event of the main frame or log pane sash."""
+        self.p.frame_size = self.GetSize()
         self.Refresh()
         event.Skip()
 
-    #--------------------------------------------------------------------------
-    # Read the signal display-order file, if any, and put sigs in that order.
-
-    def ReadOrderFile(self, orderFileName):
-        self.orderFileName = orderFileName
+    def read_order_file(self, order_file_name):
+        """Read the signal display-order file, if any, and put sigs in that order."""
+        self.order_file_name = order_file_name
         try:
-            print("Reading order file", orderFileName, "...")
-            ordf = open(orderFileName, "r")
-            newSigs = {}
+            print("Reading order file", order_file_name, "...")
+            ordf = open(order_file_name, "r")
+            new_sigs = {}
             for sig in list(self.sigs.values()):
-                sig.isInOrder = False
+                sig.is_in_order = False
             for name in ordf.readlines():
                 name = name.strip()
                 if len(name) > 1 and name[0] != "{":
@@ -1594,258 +1537,253 @@ class PVSimFrame(wx.Frame):
                     i = name.find("[")
                     if i > 0:
                         names.append(name[:i])
-                    foundSig = False
+                    found_sig = False
                     for i, sig in list(self.sigs.items()):
-                        ##print("sig:", i, sig.name, sig.isBus, sig.sub)
-                        if sig.name in names and not sig.isInOrder:
-                            ##print(" ordered", name, sig.isBus, sig.sub)
-                            newSigs[i] = sig
-                            sig.isInOrder = True
+                        ##print("sig:", i, sig.name, sig.is_bus, sig.sub)
+                        if sig.name in names and not sig.is_in_order:
+                            ##print(" ordered", name, sig.is_bus, sig.sub)
+                            new_sigs[i] = sig
+                            sig.is_in_order = True
                             sig.isDisplayed = True
-                            foundSig = True
+                            found_sig = True
                             break
-                    if not foundSig:
+                    if not found_sig:
                         print(" Not found:", names)
             ordf.close()
             for i, sig in list(self.sigs.items()):
-                if not sig.isInOrder:
-                    newSigs[i] = sig
-            self.sigs = newSigs
+                if not sig.is_in_order:
+                    new_sigs[i] = sig
+            self.sigs = new_sigs
             print(" Signals ordered.")
 
         except IOError:
             # file didn't exist: ignore
             print("No existing order file.")
 
-    #--------------------------------------------------------------------------
-    # Save signal order back to file.
-
     def SaveOrderFile(self):
-        if self.orderFileName:
-            ordf = open(self.orderFileName, "w")
-            for sig in self.timingP.dispSigs:
-                ordf.write("%s\n" % sig.name)
+        """Save signal order back to file."""
+        if self.order_file_name:
+            ordf = open(self.order_file_name, "w")
+            for sig in self.timing_panel.disp_sigs:
+                ordf.write(f"{sig.name}\n")
             ordf.close()
 
-    #--------------------------------------------------------------------------
-    # A new test was chosen in the Simulate menu.
-
     def OnTestChoice(self, event):
-        for item in self.simulateMenu.GetMenuItems():
+        """Handle new test choice in the Simulate menu."""
+        for item in self.simulate_menu.GetMenuItems():
             if item.IsChecked():
-                self.p.testChoice = item.GetLabel()
+                self.p.test_choice = item.GetLabel()
                 break
         self.UpdateTestChoicesView()
 
-    #--------------------------------------------------------------------------
-    # Add test choices to Simulate menu.
-
     def AddTestChoicesMenu(self):
+        """Add test choices to Simulate menu."""
         p = self.p
 
-        # add the test choices to the Simulation menu
-        for choice in self.testChoices:
+        for choice in self.test_choices:
             id = wx.NewIdRef()
-            item = self.simulateMenu.AppendRadioItem(id, choice)
-            self.Connect(id, -1, wx.wxEVT_COMMAND_MENU_SELECTED, \
-                         self.OnTestChoice)
-            if choice == p.testChoice:
-                self.simulateMenu.Check(id, True)
-
-    #--------------------------------------------------------------------------
-    # Update test choices log page(s) from p.testChoice after selection.
+            item = self.simulate_menu.AppendRadioItem(id, choice)
+            self.Connect(id, -1, wx.wxEVT_COMMAND_MENU_SELECTED, self.OnTestChoice)
+            if choice == p.test_choice:
+                self.simulate_menu.Check(id, True)
 
     def UpdateTestChoicesView(self):
+        """Update test choices log page(s) from p.test_choice after selection."""
         p = self.p
         mgr = self._mgr
-        self.mpLogs = {}
-        if self._mpLogNB != None:
-            mgr.ClosePane(mgr.GetPane(self._mpLogNB))
-            self._mpLogNB = None
+        self.mp_logs = {}
+        if self._mp_log_notebook != None:
+            mgr.ClosePane(mgr.GetPane(self._mp_log_notebook))
+            self._mp_log_notebook = None
 
-        if len(self.testChoices) > 1 and p.testChoice == "All":
+        if len(self.test_choices) > 1 and p.test_choice == "All":
             # split the log window into pages, one per choice
-            nb = wx.aui.AuiNotebook(self, style=wx.aui.AUI_NB_TOP|
-                                                wx.aui.AUI_NB_TAB_SPLIT|
-                                                wx.aui.AUI_NB_SCROLL_BUTTONS)
-            self._mpLogNB = nb
-            mgr.AddPane(nb, (wx.aui.AuiPaneInfo()
-                            .Direction(p.get("logDir", 3))
-                            .Position(1)
-                            .BestSize(p.get("logSize", (898, 300)))
-                            .Caption("Tests")))
-            numberedAttrPat = re.compile(r"^[A-Z]+([0-9]+[A-Z]*)$")
-            for choice in self.testChoices[:-1]:
-                pageTC = wx.TextCtrl(self, style=wx.TE_MULTILINE|
-                                   wx.TE_READONLY|wx.TE_RICH)
-                pageTC.SetFont(wx.Font(fontSize, wx.TELETYPE, wx.NORMAL,
-                             wx.NORMAL))
+            nb = wx.aui.AuiNotebook(
+                self,
+                style=wx.aui.AUI_NB_TOP | wx.aui.AUI_NB_TAB_SPLIT | wx.aui.AUI_NB_SCROLL_BUTTONS,
+            )
+            self._mp_log_notebook = nb
+            mgr.AddPane(
+                nb,
+                (
+                    wx.aui.AuiPaneInfo()
+                    .Direction(p.get("log_dir", 3))
+                    .Position(1)
+                    .BestSize(p.get("log_size", (898, 300)))
+                    .Caption("Tests")
+                ),
+            )
+            numbered_attr_pat = re.compile(r"^[A-Z]+([0-9]+[A-Z]*)$")
+            for choice in self.test_choices[:-1]:
+                page_tc = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH)
+                page_tc.SetFont(wx.Font(font_size, wx.TELETYPE, wx.NORMAL, wx.NORMAL))
                 words = choice.split("_")
                 if words[0] == "TEST":
                     words = words[1:]
                 title = []
                 for word in words:
-                    m = numberedAttrPat.match(word)
+                    m = numbered_attr_pat.match(word)
                     if m:
                         word = m.group(1)
                     title.append(word)
                 title = ".".join(title)
                 ##title = ".".join([w[-2:] for w in words])
-                nb.AddPage(pageTC, title)
-                logPath = os.path.join(p.projDir, self.rootName+"_"+choice)
-                self.mpLogs[choice] = Logger(logPath, pageTC)
-                ##self.logP = pageTC
+                nb.AddPage(page_tc, title)
+                log_path = os.path.join(p.proj_dir, self.root_name + "_" + choice)
+                self.mp_logs[choice] = Logger(log_path, page_tc)
+                ##self.log_panel = page_tc
         else:
-            self.mpLogs[p.testChoice] = sys.stdout
+            self.mp_logs[p.test_choice] = sys.stdout
         mgr.Update()
 
-    #--------------------------------------------------------------------------
-    # Gather any test choice lines from .psim file.
-    # Also initializes testChoice preference if needed, and makes menu.
-
-    def GatherTestChoices(self, projFileFullName):
+    def GatherTestChoices(self, proj_file_full_name):
+        """Gather any test choice lines from .psim file.
+        Also initializes test_choice preference if needed, and makes menu.
+        """
         p = self.p
         choices = []
         try:
-            for line in open(projFileFullName):
+            for line in open(proj_file_full_name):
                 line = line.strip()
                 words = line.split()
-                if len(words) > 1 and words[0] == "testChoice":
+                if len(words) > 1 and words[0] == "test_choice":
                     choices.append(words[1])
         except:
-            print("Project file", projFileFullName, "not found")
+            print("Project file", proj_file_full_name, "not found")
         choices.append("All")
-        self.testChoices = choices
-        p.get("testChoice", choices[0])
+        self.test_choices = choices
+        p.get("test_choice", choices[0])
         self.AddTestChoicesMenu()
         self.UpdateTestChoicesView()
 
-    #--------------------------------------------------------------------------
-    # Set given .psim project file for future simulation runs.
-
-    def OpenFile(self, fileName=None):
-        ##print("OpenFile:", fileName)
+    def OpenFile(self, file_name=None):
+        """Set given .psim project file for future simulation runs."""
+        ##print("OpenFile:", file_name)
         p = self.p
-        if fileName == None:
-            if self.fileHistory.GetCount() == 0:
+        if file_name == None:
+            if self.file_history.GetCount() == 0:
+                print("No file name, no file history, exiting")
                 return
-            fileName = os.path.join(p.projDir, p.projName + ".psim")
+            print(f"Creating file {p.proj_name}.psim in {p.proj_dir}")
+            file_name = os.path.join(p.proj_dir, p.proj_name + ".psim")
         else:
-            self.fileHistory.AddFileToHistory(fileName)
-            self.fileHistory.Save(p.config())
-        projDir, name = os.path.split(fileName)
-        if len(projDir) == 0:
-            projDir, name = os.path.split(os.path.abspath(fileName))
-        projDir += os.path.sep
-        ##print("OpenFile:", fileName, projDir, name)
-        p.projDir = projDir
-        p.projName, ext = os.path.splitext(name)
+            self.file_history.AddFileToHistory(file_name)
+            self.file_history.Save(p.config())
+        proj_dir, name = os.path.split(file_name)
+        ##print(f"OpenFile: {proj_dir=} {name=}")
+        if len(proj_dir) == 0:
+            proj_dir, name = os.path.split(os.path.abspath(file_name))
+        proj_dir += os.path.sep
+        ##print("OpenFile:", file_name, proj_dir, name)
+        p.proj_dir = proj_dir
+        p.proj_name, ext = os.path.splitext(name)
         if ext == ".psim":
-            self.SetTitle("PVSim - %s" % p.projName)
-            print("Set %s in %s as simulation source" % (p.projName,p.projDir))
+            self.SetTitle(f"PVSim - {p.proj_name}")
+            print(f"Set {p.proj_name} in {p.proj_dir} as simulation source")
             ##self.RunSimulation()
 
             # gather any test choice lines from .psim file
-            self.GatherTestChoices(os.path.join(projDir, name))
+            self.GatherTestChoices(os.path.join(proj_dir, name))
 
         else:
             wx.Bell()
 
-    #--------------------------------------------------------------------------
-    # Choose a .psim project file for future simulation runs.
-
     def OnOpen(self, event):
+        """Choose a .psim project file for future simulation runs."""
         print("OnOpen")
         wildcard = "PVSim file (*.psim)|*.psim"
-        dlg = wx.FileDialog(self, message="Load...", defaultDir=os.getcwd(),
-                defaultFile="", wildcard=wildcard, style=wx.FD_OPEN)
+        dlg = wx.FileDialog(
+            self,
+            message="Load...",
+            defaultDir=os.getcwd(),
+            defaultFile="",
+            wildcard=wildcard,
+            style=wx.FD_OPEN,
+        )
         dlg.SetFilterIndex(0)
         if dlg.ShowModal() == wx.ID_OK:
             self.OpenFile(dlg.GetPath())
 
-    #--------------------------------------------------------------------------
-    # Have chosen a past file from the File menu: open it.
-
     def OnFileHistory(self, event):
+        """Open chosen past file from the File menu."""
         # get the file based on the menu ID
-        fileNum = event.GetId() - wx.ID_FILE1
-        self.OpenFile(self.fileHistory.GetHistoryFile(fileNum))
+        file_id = event.GetId() - wx.ID_FILE1
+        self.OpenFile(self.file_history.GetHistoryFile(file_id))
 
-    #--------------------------------------------------------------------------
-    # Start timer for periodic log window updating.
-
-    def StartMPTimer(self, mpPool, mpLogQueue):
-        self.mpPool = mpPool
-        self.mpLogQueue = mpLogQueue
+    def StartMPTimer(self, mp_pool, mp_log_queue):
+        """Start timer for periodic log window updating."""
+        self.mp_pool = mp_pool
+        self.mp_log_queue = mp_log_queue
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnTimer)
         # start display-update timer, given interval in ms
-        msPerUpdate = 100
-        self.timer.Start(msPerUpdate)
-
-    #--------------------------------------------------------------------------
-    # Start a simulation process in the background for each selected test.
+        ms_per_update = 100
+        self.timer.Start(ms_per_update)
 
     def StartMPSimulation(self):
+        """Start a simulation process in the background for each selected test."""
         p = self.p
-        if p.testChoice == "All":
-            if len(self.testChoices) > 1:
-                tests = self.testChoices[:-1]
+        if p.test_choice == "All":
+            if len(self.test_choices) > 1:
+                tests = self.test_choices[:-1]
             else:
                 tests = [None]
         else:
-            tests = [p.testChoice]
+            tests = [p.test_choice]
 
         ##print("StartMPSimulation: tests=", tests)
-        testArgs = [(p.projDir, p.projName, self.nTicks, self.barSignal,
-             self.mpLogQueue, test, test == tests[-1]) for test in tests]
-        r = self.mpPool.map_async(mpWorker, testArgs, callback=mpWorkerDone)
+        test_args = [
+            (
+                p.proj_dir,
+                p.proj_name,
+                self.n_ticks,
+                self.bar_signal,
+                self.mp_log_queue,
+                test,
+                test == tests[-1],
+            )
+            for test in tests
+        ]
+        r = self.mp_pool.map_async(mp_worker, test_args, callback=mp_worker_done)
         ##print("StartMPSimulation: active=", mp.active_children())
 
-    #--------------------------------------------------------------------------
-    # All simulation processes have finished: draw it and report any errors.
-
     def OnMPResult(self):
-        global errCount
+        """All simulation processes have finished: draw it and report any errors."""
+        global error_count
         p = self.p
-        ##print("OnMPResult: errCount=", errCount)
+        ##print("OnMPResult: error_count=", error_count)
 
-        if errCount == 0:
-            print("%2.1f: Simulation done, no errors.\n" % \
-                (time.perf_counter() - t0))
-            proj = os.path.join(p.projDir, p.projName)
-            self.ReadOrderFile("%s.order" % proj)
+        if error_count == 0:
+            print("%2.1f: Simulation done, no errors.\n" % (time.perf_counter() - t0))
+            proj = os.path.join(p.proj_dir, p.proj_name)
+            self.read_order_file("%s.order" % proj)
 
         # draw final test's results in timing pane
-        self.timingP.AdjustMyScrollbars()
-
-    #--------------------------------------------------------------------------
-    # Timer tick: display any message lines from the back end process(es).
+        self.timing_panel.AdjustMyScrollbars()
 
     def OnTimer(self, event):
-        if self.mpLogQueue:
-            while not self.mpLogQueue.empty():
-                name, msg = self.mpLogQueue.get()
-                self.mpLogs[name].write(msg)
-
-    #--------------------------------------------------------------------------
-    # Run pvsimu simulation to generate events file, then display timing.
+        """Timer tick: display any message lines from the back end process(es)."""
+        if self.mp_log_queue:
+            while not self.mp_log_queue.empty():
+                name, msg = self.mp_log_queue.get()
+                self.mp_logs[name].write(msg)
 
     def RunSimulation(self, event=None):
-        global mainFrame
-        mainFrame = self
+        """Run pvsimu simulation to generate events file, then display timing."""
+        global main_frame
+        main_frame = self
         p = self.p
         print("\nRunSimulation")
 
-        self.logP.SetInsertionPointEnd()
-        if len(self.timingP.dispSigs) > 0:
+        self.log_panel.SetInsertionPointEnd()
+        if len(self.timing_panel.disp_sigs) > 0:
             self.SavePrefs()
 
         pvsimu.Init()
-        backendVersion = pvsimu.GetVersion()
-        print("Found PVSim %s backend" % backendVersion)
+        backend_version = pvsimu.GetVersion()
+        print(f"Found PVSim {backend_version} backend")
 
-        if useMultiprocessing:
+        if use_multiprocessing:
             print("Using Multiprocessing")
             self.StartMPSimulation()
         else:
@@ -1853,173 +1791,157 @@ class PVSimFrame(wx.Frame):
             self.Connect(-1, -1, EVT_RESULT_ID, self.OnResult)
             self.worker = SimThread(self)
 
-    #--------------------------------------------------------------------------
-    # The threaded simulation task finished: terminate it and draw results.
-
     def OnResult(self, event):
+        """The threaded simulation task finished: terminate it and draw results."""
         if event.msg:
             print(event.msg, end="")
         else:
             self.worker = None
 
             # convert strings from backend to Unicode
-            for sig in list(self.timingP.frame.sigs.values()):
+            for sig in list(self.timing_panel.frame.sigs.values()):
                 ##print(sig.name)
-                convertedEvents = []
+                converted_events = []
                 for t, level in pairwise(sig.events):
                     ##print(f"{t} {level}", end="")
                     if type(level) is type(b""):
-                        level = level.decode('utf-8')
+                        level = level.decode("utf-8")
                     ##print(f" {level}")
-                    convertedEvents.append(t)
-                    convertedEvents.append(level)
-                sig.events = convertedEvents
+                    converted_events.append(t)
+                    converted_events.append(level)
+                sig.events = converted_events
 
             # draw results in timing pane
-            self.timingP.AdjustMyScrollbars()
-
-    #--------------------------------------------------------------------------
-    # Open the source file for given signal and center on its definition.
+            self.timing_panel.AdjustMyScrollbars()
 
     def GotoSource(self, sig):
+        """Open the source file for given signal and center on its definition."""
         p = self.p
-        print("GotoSource", sig.name, sig.srcFile, sig.srcPos)
-        if isMac:
+        print("GotoSource", sig.name, sig.src_file, sig.src_pos)
+        if is_mac:
             name = sig.name
             i = name.find("[")
             if i > 0:
                 name = name[:i]
             name = name.split(".")[-1]
-            if 0:
-                # Select word using Alpha editor
-                os.system("osascript -e 'tell application \"AlphaX\"" \
-                    " to doscript \"gotoFileLocation {%s%s} %d %s\"'" % \
-                    (p.projDir, sig.srcFile, sig.srcPos, name))
-                os.system("osascript -e 'tell application \"AlphaX\"" \
-                    " to activate'")
-            else:
-                winName = sig.srcFile.split("/")[-1]
-                print (name, sig.srcPos, sig.srcPos+len(name)+2,
-                     sig.srcFile, winName)
-                # Select word using BBEdit editor
-                # (would like to also update Find's search string, but
-                #  that property is read-only)
-                result = subprocess.run(
-                    ['osascript', '-e', 'tell application "Finder" to get '
-                        'application id "com.barebones.bbedit"'],
-                    capture_output=True,
-                    text=True
+            win_name = sig.src_file.split("/")[-1]
+            # Select word using BBEdit editor
+            # (would like to also update Find's search string, but that property is read-only)
+            result = subprocess.run(
+                [
+                    "osascript",
+                    "-e",
+                    'tell application "Finder" to get application id "com.barebones.bbedit"',
+                ],
+                capture_output=True,
+                text=True,
+            )
+            editor = result.stdout.strip()
+            print(f"{editor=}")
+            if editor != "":
+                cmd = (
+                    f'osascript -e \'tell application "{editor}"\n'
+                    f'  open "{p.proj_dir}{sig.src_file}"\n'
+                    f'  find "{name}" searching in characters {sig.src_pos} thru'
+                    f' {sig.src_pos+len(name)+2} of document "{win_name}" options {{case'
+                    f" sensitive:true, match words:true}}\n"
+                    f"  if found of result then\n"
+                    f"    select found object of result\n"
+                    f'    activate window "{win_name}"\n'
+                    "  end if\n"
+                    "end tell'"
                 )
-                editor = result.stdout.strip()
-                print(f"{editor=}")
-                if editor != '':
-                    os.system("osascript -e 'tell application \"%s\"\n" \
-                        "  open \"%s%s\"\n" \
-                        "  find \"%s\" searching in characters %d thru %d" \
-                        "   of document \"%s\" options {case sensitive:true," \
-                        "   match words:true}\n" \
-                        "  if found of result then\n" \
-                        "    select found object of result\n" \
-                        "    activate window \"%s\"\n" \
-                        "  end if\n" \
-                        "end tell'" % \
-                        (editor, p.projDir, sig.srcFile, name, sig.srcPos,
-                         sig.srcPos+len(name)+2, winName, winName))
-                else:
-                    print("External editor BBEdit not found")
-
-    #--------------------------------------------------------------------------
-    # Return a dictionary of a pane's settings.
+                ##print(cmd)
+                os.system(cmd)
+            else:
+                print("External editor BBEdit not found")
 
     def GetPanePrefs(self, pane):
+        """Return a dictionary of a pane's settings."""
         info = self._mgr.SavePaneInfo(self._mgr.GetPane(pane))
-        infoDict = {}
+        info_dict = {}
         for nv in info.split(";"):
-            name, val = nv.split("=")
-            infoDict[name] = val
-        return infoDict
-
-    #--------------------------------------------------------------------------
-    # Save prefs to file.
+            name, value = nv.split("=")
+            info_dict[name] = value
+        return info_dict
 
     def SavePrefs(self):
+        """Save preferences to file."""
         p = self.p
-        p.framePos = tuple(self.GetPosition())
-        logInfo = self.GetPanePrefs(self.logP)
-        p.logDir = logInfo["dir"]
-        p.logSize = self.logP.GetSize()
-        ##print("logSize=", p.logSize)
-        p.timingSize = self.timingP.GetSize()
-        ##print("timingSize=", p.timingSize)
-        p.xsPos = self.timingP.GetScrollPos(wx.HORIZONTAL)
-        p.ysPos = self.timingP.GetScrollPos(wx.VERTICAL)
+        p.frame_pos = tuple(self.GetPosition())
+        log_info = self.GetPanePrefs(self.log_panel)
+        p.log_dir = log_info["dir"]
+        p.log_size = self.log_panel.GetSize()
+        ##print(f"{p.log_size=}")
+        p.timing_size = self.timing_panel.GetSize()
+        ##print(f"{p.timing_size=}")
+        p.x_scroll_pos = self.timing_panel.GetScrollPos(wx.HORIZONTAL)
+        p.y_scroll_pos = self.timing_panel.GetScrollPos(wx.VERTICAL)
         p.save()
 
         self.SaveOrderFile()
 
-    #--------------------------------------------------------------------------
-    # Quitting: save prefs to file.
-
     def OnExit(self, event=None):
+        """Quitting: save prefs to file."""
         ##print("OnExit")
         # debug prints here go to standard output since log soon won't exist
-        if hasattr(self, "origStdout"):
-            sys.stdout = self.origStdout
-            sys.stderr = self.origStderr
+        if hasattr(self, "orig_stdout"):
+            sys.stdout = self.orig_stdout
+            sys.stderr = self.orig_stderr
 
         self.SavePrefs()
-        if isMac:
+        if is_mac:
             self.ipc.stop()
             self.ipc.join()  # Wait for the thread to finish
-        self.Destroy()     # just exit from App so cProfile may complete
-        if not self.mpPool is None:
+        self.Destroy()  # just exit from App so cProfile may complete
+        if not self.mp_pool is None:
             # terminate the processes
-            self.mpPool.close()
+            self.mp_pool.close()
             ##print("OnExit: pool closed")
-            self.mpPool.join()
+            self.mp_pool.join()
             ##print("OnExit: pool joined")
 
 
-#==============================================================================
-# Start up application.
-
 class PVSimApp(wx.App):
+    """PVSim application."""
+
     def OnInit(self):
-        ##print("OnInit")
-        psimFile = None
+        print("OnInit")
+        psim_file = None
         if not (len(sys.argv) == 2 and sys.argv[1][:4] == "-psn"):
             # *** UNUSED ***
-            ##print("args=", sys.argv)
+            print("args=", sys.argv)
             ##parser = OptionParser()
             ##(cmdLineOpts, remainder) = parser.parse_args()
             if len(sys.argv) == 2:
-                psimFile = os.path.abspath(sys.argv[1])
+                psim_file = os.path.abspath(sys.argv[1])
 
         self.frame = frame = PVSimFrame(None)
-        ##if psimFile and os.path.splitext(psimFile)[1] == ".psim":
+        ##if psim_file and os.path.splitext(psim_file)[1] == ".psim":
         ##    # *** UNUSED ***
-        ##    print("PVSimApp: running", psimFile)
-        ##    frame.OpenFile(psimFile)
+        ##    print("PVSimApp: running", psim_file)
+        ##    frame.OpenFile(psim_file)
         ##    frame.RunSimulation()
-        ##print("OnInit end")
+        print("OnInit end")
         return True
+
 
 def RunApp():
     global app
     try:
-        if useMultiprocessing:
+        if use_multiprocessing:
             # create pool of sim-worker processes before starting app
-            ##mpPool = mp.Pool(mp.cpu_count()-1)    # too many-- bogs down
-            mpPool = mp.Pool(max(mp.cpu_count()//2, 1))  # = 4 procs on i7
-            mpLogQueue = mp.Manager().Queue()
+            ##mp_pool = mp.Pool(mp.cpu_count()-1)    # too many-- bogs down
+            mp_pool = mp.Pool(max(mp.cpu_count() // 2, 1))  # = 4 procs on i7
+            mp_log_queue = mp.Manager().Queue()
 
         ##print("RunApp")
         app = PVSimApp(redirect=False)
-        if useMultiprocessing:
-            app.frame.StartMPTimer(mpPool, mpLogQueue)
-        prof = app.frame.pvsimDir +"pvsim.profile"
-        ##print("RunApp profile=", showProfile, prof)
-        if showProfile:
+        if use_multiprocessing:
+            app.frame.StartMPTimer(mp_pool, mp_log_queue)
+        prof = app.frame.pvsim_dir + "pvsim.profile"
+        ##print("RunApp profile=", show_profile, prof)
+        if show_profile:
             cProfile.run("app.MainLoop()", prof)
             print("To see the stats, type: ./showprof.py")
         else:
@@ -2028,15 +1950,13 @@ def RunApp():
 
     except:
         exctype, value = sys.exc_info()[:2]
+        print(f"\nError: {exctype} {value}")
         if exctype != SystemExit:
-            dlg = dialogs.ScrolledMessageDialog(None, traceback.format_exc(),
-                                            "Error")
+            dlg = dialogs.ScrolledMessageDialog(None, traceback.format_exc(), "Error")
             dlg.ShowModal()
         print("PVSim app exiting")
         sys.exit(-1)
 
-
-#------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     RunApp()
