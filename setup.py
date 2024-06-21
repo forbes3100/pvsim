@@ -16,9 +16,9 @@ mainscript = "pvsim.py"
 version = "None"
 copyright = "None"
 for line in open(mainscript).readlines():
-    if line.startswith("# Copyright"):
-        copyright = line.strip().split(" ", 1)[1]
-    elif line.startswith("guiVersion ="):
+    if line.startswith("__copyright__"):
+        copyright = line.split("=")[1].strip().replace('"', '')
+    elif line.startswith("__version__ ="):
         version = line.split("=")[1].strip().replace('"', '')
 
 # Define dependencies

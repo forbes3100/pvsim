@@ -6,7 +6,7 @@ mainscript = "pvsim.py"
 # grab version from source
 version = "None"
 for line in open(mainscript).readlines():
-    if line.startswith("guiVersion ="):
+    if line.startswith("__version__ ="):
         version = line.split("=")[1].strip().replace('"', '')
 
 ext_modules = [
