@@ -45,7 +45,6 @@
 		D269DE031636CB9A00D01308 /* VLCompiler.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDF91636CB9A00D01308 /* VLCompiler.h */; };
 		D269DE041636CB9A00D01308 /* VLSysLib.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DDFA1636CB9A00D01308 /* VLSysLib.h */; };
 		D269DE0B1636CC7300D01308 /* PSignal.h in Headers */ = {isa = PBXBuildFile; fileRef = D269DE0A1636CC7300D01308 /* PSignal.h */; };
-		D26ACF9D2C245D2600B20D45 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = D26ACF9C2C245D2600B20D45 /* Makefile */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -289,7 +288,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D26ACF9D2C245D2600B20D45 /* Makefile in Sources */,
 				D269DDBE1636614300D01308 /* EvalSignal.cc in Sources */,
 				D269DDC01636614300D01308 /* ModelPCode.cc in Sources */,
 				D269DDC11636614300D01308 /* PVSimMain.cc in Sources */,
