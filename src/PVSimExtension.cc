@@ -72,7 +72,6 @@ static PyObject* readFileFn = NULL;
 
 static PyObject* pvsim_SetCallbacks(PyObject* self, PyObject* args)
 {
-    PyObject* result = NULL;
     PyObject* displayFnTemp;
     PyObject* readFileFnTemp;
 
@@ -172,15 +171,24 @@ void newSignalPy(Signal* signal, Level newLevel, bool isBus,
     const char* srcName = "-";
     size_t srcPos = 0;
     Token* srcLoc = signal->srcLoc;
+    if (debugLevel(3))
+    {
+        display("newSignalPy signal %s: isBus=%d (%s)\n", signal->name, isBus,
+                signal->srcLocObjName);
+        if (srcLoc)
+        {
+            display(" srcLoc tokCode=%d\n", srcLoc->tokCode);
+        }
+    }
     if (srcLoc && srcLoc->tokCode == NAME_TOKEN)
     {
         srcName = srcLoc->src->fileName;
         srcPos = srcLoc->pos - srcLoc->src->base;
     }
     size_t index = signal - gSignals;
-    PyObject* args = Py_BuildValue("(ns[ic]sniii)", index,
-      signal->name, 0, gLevelNames[newLevel], srcName, srcPos, isBus,
-      lsub, rsub);
+    PyObject* args = Py_BuildValue("(ns[ic]snsiii)", index,
+      signal->name, 0, gLevelNames[newLevel], srcName, srcPos,
+      signal->srcLocObjName, isBus, lsub, rsub);
     PyObject* sig = PyObject_CallObject(gPySignalClass, args);
     Py_DECREF(args);
 

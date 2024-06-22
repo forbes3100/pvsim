@@ -854,10 +854,11 @@ void initSignals()
                     if (srcLoc && srcLoc->tokCode == NAME_TOKEN)
                     {
                         // write signal with its file location
-                        fprintf(gEvFile, "Signal %d=%c: %s %s %ld\n",
+                        fprintf(gEvFile, "Signal %d=%c: %s %s %ld (%s)\n",
                           (int)(signal - gSignals), gLevelNames[newLevel],
                           signal->name, srcLoc->src->fileName,
-                          (long)(srcLoc->pos - srcLoc->src->base));
+                          (long)(srcLoc->pos - srcLoc->src->base),
+                          signal->srcLocObjName);
                     }
                     else
                     {

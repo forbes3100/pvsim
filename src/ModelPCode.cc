@@ -1213,6 +1213,7 @@ void Model::test()
     s->is = C_MODEL + REGISTERED;
     s->model = m;
     s->srcLoc = 0;
+    s->srcLocObjName = s->name;
     m->isTask = TRUE;
     m->init();
     m->executeHandCode();

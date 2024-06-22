@@ -189,6 +189,7 @@ struct Signal
     short   RCminTime;      // pulled-up signal's min RC time constant
     short   RCmaxTime;      // pulled-up signal's max RC time constant
     Token*  srcLoc;         // location in source of signal's definition
+    const char* srcLocObjName; // name of object at srcLoc (may be parent's)
     Signal* randTrkSig;     // signal to track random delay counter of, or zero
 }  __attribute__((aligned(8)));
 

@@ -55,6 +55,7 @@ public:
     VType       type;
     NamedObj*   namesNext;      // next name in current scope
     Token*      srcLoc;         // source position for error messages
+    const char* srcLocObjName;  // name of object at source position (may be parent's name)
 
                 NamedObj();
                 NamedObj(const char* name, VType type);

@@ -704,6 +704,7 @@ void Scope::initVariables(char* instModule, char* fullDesig)
                         Signal* signal = addSignal(newString(sigName), LV_L);
                         signal->model = 0;   // model filled in later for wires
                         signal->srcLoc = scalar->srcLoc;
+                        signal->srcLocObjName = scalar->srcLocObjName;
                         if ((sigName[0] == '_' && sigName[1] == '_') ||
                             !scalar->isVisible)
                             signal->is &= ~DISPLAYED;
@@ -743,6 +744,7 @@ void Scope::initVariables(char* instModule, char* fullDesig)
                                                     vec->name, bit, endBit);
                         Signal* signal = addSignal(newString(sigName), LV_S);
                         signal->srcLoc = vec->srcLoc;
+                        signal->srcLocObjName = vec->srcLocObjName;
                         signal->busOpt = DISP_BUS;
 //                      if (inverted)
 //                          signal->busOpt |= DISP_INVERTED;
@@ -769,6 +771,7 @@ void Scope::initVariables(char* instModule, char* fullDesig)
                             // model filled in later for wires
                             signal->model = 0;
                             signal->srcLoc = vec->srcLoc;
+                            signal->srcLocObjName = vec->srcLocObjName;
                             if (!vec->isVisible && !debugLevel(1))
                                 signal->is &= ~DISPLAYED;
                             if (attr & att_tri)
@@ -796,6 +799,7 @@ void Scope::initVariables(char* instModule, char* fullDesig)
                     Signal* signal = addSignal(newString(sigName), LV_L);
                     signal->model = 0;      // model filled in later
                     signal->srcLoc = mem->srcLoc;
+                    signal->srcLocObjName = mem->srcLocObjName;
                     signal->is = C_MODEL;
                     if (mem->isVisible || debugLevel(1))
                         signal->is |= DISPLAYED;

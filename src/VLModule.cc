@@ -453,6 +453,8 @@ void codeAssignment(NetAttr lValueAttr, bool continuous = FALSE)
                                 Scope::local->newLocal(1, sizeof(size_t)),
                                 (Scalar*)lval,
                                 vecRange);
+                            enable->srcLoc = lnet->srcLoc;
+                            enable->srcLocObjName = lnet->name;
 
                             module->startHandler(k_assign, enName);
                             setTriggers(enExpr);
@@ -467,6 +469,8 @@ void codeAssignment(NetAttr lValueAttr, bool continuous = FALSE)
                                 enExpr = newOp1(op_not, enExpr);
                             codeExpr(enExpr);
                             internal->enable = enable;
+                            internal->srcLoc = lnet->srcLoc;
+                            internal->srcLocObjName = lnet->name;
                             codePostScalar(enable, 0, att_none, nEnParms);
                             module->endHandler(enable);
                             lnet->triSrcNo++;

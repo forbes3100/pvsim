@@ -123,6 +123,7 @@ NamedObj::NamedObj(const char* name, VType type)
     this->type = type;
     this->namesNext = 0;
     this->srcLoc = gScToken;
+    this->srcLocObjName = name;
     if (Scope::local)
         Scope::local->addName(this);
 }
