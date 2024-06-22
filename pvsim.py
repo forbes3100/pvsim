@@ -33,8 +33,8 @@ backend_msg_buff_len = 20
 
 t0 = time.perf_counter()
 
-is_win = sys.platform == "win32"
-is_linux = sys.platform == "linux2"
+is_win = sys.platform.startswith("win")
+is_linux = sys.platform.startswith("linux")
 is_mac = not (is_win or is_linux)
 
 # Not yet for Windows
@@ -419,7 +419,9 @@ class TimingPane(wx.ScrolledWindow):
 
     def y_pos_to_index(self, y):
         """Convert vertical pixel position to dispSig list index."""
-        index = int((y + self.y0) / self.h_row + 0.5) - 1
+        # index - 1 because first row is header
+        index = int((y + self.y0) / self.h_row) - 1
+        ##print(f"y_pos_to_index: {y=} {self.y0=} {self.h_row=} --> {index=}")
         return index
 
     def AdjustMyScrollbars(self, start_tick=None, end_tick=None):
@@ -1102,12 +1104,14 @@ class TimingPane(wx.ScrolledWindow):
 class Signal(object):
     """A signal or bus of signals, read from events file."""
 
-    def __init__(self, index, name, events, src_file, src_pos, is_bus=False, l_sub=0, r_sub=0):
+    def __init__(self, index, name, events, src_file, src_pos, src_pos_obj_name, is_bus=False,
+                 l_sub=0, r_sub=0):
         # args must match Py_BuildValue() in PVSimExtension.cc newSignalPy()
         self.index = index
         self.name = name
         self.src_file = src_file
         self.src_pos = src_pos
+        self.src_pos_obj_name = src_pos_obj_name
         self.events = events
         self.isDisplayed = True  # must be named "isDisplayed"
         self.is_bus = is_bus
@@ -1817,9 +1821,9 @@ class PVSimFrame(wx.Frame):
     def GotoSource(self, sig):
         """Open the source file for given signal and center on its definition."""
         p = self.p
-        print("GotoSource", sig.name, sig.src_file, sig.src_pos)
+        print("GotoSource", sig.src_pos_obj_name, sig.src_file, sig.src_pos)
         if is_mac:
-            name = sig.name
+            name = sig.src_pos_obj_name
             i = name.find("[")
             if i > 0:
                 name = name[:i]
@@ -1837,7 +1841,7 @@ class PVSimFrame(wx.Frame):
                 text=True,
             )
             editor = result.stdout.strip()
-            print(f"{editor=}")
+            ##print(f"{editor=}")
             if editor != "":
                 cmd = (
                     f'tell application "{editor}"\n'
@@ -1851,7 +1855,7 @@ class PVSimFrame(wx.Frame):
                     "  end if\n"
                     "end tell"
                 )
-                print(cmd)
+                ##print(cmd)
                 result = subprocess.run(["osascript", "-e", cmd], capture_output=True, text=True)
                 ##print(f"stdout='{result.stdout}'\n stderr='{result.stderr}'")
                 if "execution error" in result.stderr:
