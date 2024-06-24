@@ -1916,6 +1916,13 @@ class PVSimApp(wx.App):
 
     def OnInit(self):
         self.frame = frame = PVSimFrame(None)
+
+        if is_mac and wx.version().startswith("4.2.1 "):
+            # workaround for wxPython 4.2.1 bring-app-to-front bug
+            # requires: pip install pyobjc-framework-ApplicationServices
+            from AppKit import NSApp
+            NSApp.activateIgnoringOtherApps_(True)
+
         return True
 
 
