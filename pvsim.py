@@ -14,7 +14,6 @@ from wx.lib.wordwrap import wordwrap
 import locale
 import subprocess
 import unittest
-from optparse import OptionParser
 import socket
 from pubsub import pub
 import multiprocessing as mp
@@ -26,7 +25,7 @@ show_profile = 0
 disp_margin = 0
 show_text = 1
 use_snap = 0  # enable snap-cursor-to-edge (slows down highlighting though)
-use_multiprocessing = 0
+use_multiprocessing = 0  # not finished
 
 backend_msg_buff_len = 20
 ##backend_msg_buff_len = 1
@@ -160,7 +159,7 @@ log_queue = None  # a process's local copy of mp_log_queue
 def print_mp(msg):
     """Write a message the GUI thread's log window and log file. No newline on end."""
     global log_name, log_queue, error_count
-    ##print("print_mp:", msg)
+    ##print(f"print_mp({log_name}): {msg}")
     log_queue.put((log_name, msg))
     if msg.find("*** ERROR") >= 0:
         error_count += 1
@@ -1576,7 +1575,7 @@ class PVSimFrame(wx.Frame):
         """Handle new test choice in the Simulate menu."""
         for item in self.simulate_menu.GetMenuItems():
             if item.IsChecked():
-                self.p.test_choice = item.GetLabel()
+                self.p.test_choice = item.GetItemLabel()
                 break
         self.UpdateTestChoicesView()
 
@@ -1770,7 +1769,10 @@ class PVSimFrame(wx.Frame):
         if self.mp_log_queue:
             while not self.mp_log_queue.empty():
                 name, msg = self.mp_log_queue.get()
-                self.mp_logs[name].write(msg)
+                if name is None:
+                    print(msg, end="")
+                else:
+                    self.mp_logs[name].write(msg)
 
     def RunSimulation(self, event=None):
         """Run pvsimu simulation to generate events file, then display timing."""
